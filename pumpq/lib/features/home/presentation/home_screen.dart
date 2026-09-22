@@ -60,7 +60,11 @@ class HomeScreen extends ConsumerWidget {
                     label: 'Compare Prices',
                     onTap: () => context.pushNamed(AppRoute.priceComparison),
                   ),
-                  const _FeatureCard(icon: Icons.qr_code, label: 'QR Express'),
+                  _FeatureCard(
+                    icon: Icons.qr_code,
+                    label: 'QR Express',
+                    onTap: () => context.pushNamed(AppRoute.myOrders),
+                  ),
                   const _FeatureCard(icon: Icons.card_giftcard, label: 'Loyalty Rewards'),
                   const _FeatureCard(icon: Icons.account_balance_wallet, label: 'Wallet'),
                   const _FeatureCard(icon: Icons.insights, label: 'Insights'),

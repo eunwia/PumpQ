@@ -58,3 +58,28 @@ class CreateOrderNotifier extends Notifier<CreateOrderState> {
 
 final createOrderProvider =
     NotifierProvider<CreateOrderNotifier, CreateOrderState>(CreateOrderNotifier.new);
+
+final myOrdersProvider = FutureProvider<List<OrderModel>>((ref) {
+  return ref.watch(orderRepositoryProvider).getOrders();
+});
+
+class GenerateQrNotifier extends Notifier<AsyncValue<OrderModel?>> {
+  @override
+  AsyncValue<OrderModel?> build() => const AsyncValue.data(null);
+
+  Future<void> generate(int orderId) async {
+    state = const AsyncValue.loading();
+    try {
+      final order = await ref.read(orderRepositoryProvider).generateQr(orderId);
+      state = AsyncValue.data(order);
+    } catch (e, st) {
+      print('QR GENERATE ERROR: $e'); // TEMPORARY DEBUG LINE
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  void reset() => state = const AsyncValue.data(null);
+}
+
+final generateQrProvider =
+    NotifierProvider<GenerateQrNotifier, AsyncValue<OrderModel?>>(GenerateQrNotifier.new);
