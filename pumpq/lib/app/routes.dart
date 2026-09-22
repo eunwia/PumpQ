@@ -4,7 +4,8 @@ import 'package:pumpq/app/route_names.dart';
 import 'package:pumpq/features/auth/presentation/login_screen.dart';
 import 'package:pumpq/features/auth/presentation/register_screen.dart';
 import 'package:pumpq/features/home/presentation/home_screen.dart';
-import 'package:pumpq/features/station_map/presentation/station_map_screen.dart'; // ADD THIS IMPORT
+import 'package:pumpq/features/station_map/presentation/station_map_screen.dart'; 
+import 'package:pumpq/features/price_comparison/presentation/price_comparison_screen.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -30,6 +31,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/station-map',
         name: AppRoute.stationMap,
         builder: (context, state) => const StationMapScreen(),
+      ),
+      GoRoute(
+        path: '/price-comparison',
+        name: AppRoute.priceComparison,
+        builder: (context, state) => const PriceComparisonScreen(),
       ),
     ],
   );
