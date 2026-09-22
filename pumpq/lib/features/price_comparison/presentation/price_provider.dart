@@ -1,9 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pumpq/features/auth/presentation/auth_provider.dart';
 import 'package:pumpq/features/price_comparison/data/price_repository.dart';
 import 'package:pumpq/models/fuel_posting_model.dart';
 
 final priceRepositoryProvider = Provider<PriceRepository>((ref) {
-  return PriceRepository();
+  return PriceRepository(ref.watch(apiServiceProvider));
 });
 
 final fuelPricesProvider = FutureProvider<List<FuelPostingModel>>((ref) {

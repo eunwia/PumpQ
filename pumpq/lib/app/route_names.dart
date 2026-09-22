@@ -4,4 +4,5 @@ abstract final class AppRoute {
   static const home = 'home';
   static const stationMap = 'stationMap'; 
   static const priceComparison = 'priceComparison';
+  static const preOrder = 'preOrder'; 
 }

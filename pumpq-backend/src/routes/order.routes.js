@@ -1,0 +1,12 @@
+const router = require('express').Router();
+const { createOrder, listOrders, getOrder, cancelOrder } = require('../controllers/order.controller');
+const { requireAuth } = require('../middleware/auth');
+
+router.use(requireAuth); // every order route requires a logged-in user
+
+router.post('/', createOrder);
+router.get('/', listOrders);
+router.get('/:id', getOrder);
+router.put('/:id/cancel', cancelOrder);
+
+module.exports = router;

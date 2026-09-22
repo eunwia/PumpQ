@@ -6,6 +6,8 @@ import 'package:pumpq/features/auth/presentation/register_screen.dart';
 import 'package:pumpq/features/home/presentation/home_screen.dart';
 import 'package:pumpq/features/station_map/presentation/station_map_screen.dart'; 
 import 'package:pumpq/features/price_comparison/presentation/price_comparison_screen.dart';
+import 'package:pumpq/features/pre_order/presentation/pre_order_screen.dart';
+
 
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -36,6 +38,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/price-comparison',
         name: AppRoute.priceComparison,
         builder: (context, state) => const PriceComparisonScreen(),
+      ),
+      GoRoute(
+        path: '/pre-order',
+        name: AppRoute.preOrder,
+        builder: (context, state) => PreOrderScreen(args: state.extra as PreOrderArgs),
       ),
     ],
   );
