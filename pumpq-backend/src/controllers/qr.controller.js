@@ -54,7 +54,6 @@ async function generateQr(req, res) {
   }
 }
 
-// Used by station staff (web admin panel) to confirm an order via scanned QR.
 async function validateQr(req, res) {
   try {
     const { qr_code } = req.body || {};
@@ -72,7 +71,7 @@ async function validateQr(req, res) {
 
     const { data: order, error } = await supabase
       .from('order')
-      .select('order_id, status, qr_code, fuel_type, liters, amount')
+      .select('order_id, user_id, status, qr_code, fuel_type, liters, amount')
       .eq('order_id', payload.order_id)
       .maybeSingle();
 
@@ -100,11 +99,77 @@ async function validateQr(req, res) {
       return fail(res, 500, 'Could not confirm order');
     }
 
-    return ok(res, 200, { order: confirmed }, 'Order confirmed');
+    // Award loyalty points: 1 point per liter, cross-brand.
+    const pointsEarned = Math.floor(order.liters);
+    await creditLoyaltyPoints(order.user_id, order.order_id, pointsEarned);
+
+    return ok(res, 200, { order: confirmed, points_earned: pointsEarned }, 'Order confirmed');
   } catch (err) {
     console.error(err);
     return fail(res, 500, 'Server error');
   }
 }
 
+function tierForPoints(points) {
+  if (points >= 1500) return 'Gold';
+  if (points >= 500) return 'Silver';
+  return 'Bronze';
+}
+
+async function creditLoyaltyPoints(userId, orderId, points) {
+  if (points <= 0) return;
+
+  // Get or create the user's loyalty account.
+  let { data: account, error } = await supabase
+    .from('loyalty_account')
+    .select('loyalty_id, points_balance, streak_count')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Loyalty lookup failed:', error);
+    return;
+  }
+
+  if (!account) {
+    const { data: created, error: createError } = await supabase
+      .from('loyalty_account')
+      .insert({ user_id: userId, points_balance: 0, tier: 'Bronze', streak_count: 0 })
+      .select('loyalty_id, points_balance, streak_count')
+      .single();
+
+    if (createError) {
+      console.error('Loyalty account creation failed:', createError);
+      return;
+    }
+    account = created;
+  }
+
+  const newBalance = account.points_balance + points;
+
+  const { error: updateError } = await supabase
+    .from('loyalty_account')
+    .update({
+      points_balance: newBalance,
+      tier: tierForPoints(newBalance),
+      streak_count: account.streak_count + 1,
+    })
+    .eq('loyalty_id', account.loyalty_id);
+
+  if (updateError) {
+    console.error('Loyalty balance update failed:', updateError);
+    return;
+  }
+
+  const { error: txError } = await supabase.from('loyalty_transaction').insert({
+    loyalty_id: account.loyalty_id,
+    order_id: orderId,
+    points_earned: points,
+    points_redeemed: 0,
+  });
+
+  if (txError) {
+    console.error('Loyalty transaction log failed:', txError);
+  }
+}
 module.exports = { generateQr, validateQr };

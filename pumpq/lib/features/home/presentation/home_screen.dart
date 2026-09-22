@@ -65,7 +65,11 @@ class HomeScreen extends ConsumerWidget {
                     label: 'QR Express',
                     onTap: () => context.pushNamed(AppRoute.myOrders),
                   ),
-                  const _FeatureCard(icon: Icons.card_giftcard, label: 'Loyalty Rewards'),
+                  _FeatureCard(
+                    icon: Icons.card_giftcard,
+                    label: 'Loyalty Rewards',
+                    onTap: () => context.pushNamed(AppRoute.loyaltyRewards),
+                  ),
                   const _FeatureCard(icon: Icons.account_balance_wallet, label: 'Wallet'),
                   const _FeatureCard(icon: Icons.insights, label: 'Insights'),
                 ],

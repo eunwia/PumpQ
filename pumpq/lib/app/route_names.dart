@@ -6,5 +6,6 @@ abstract final class AppRoute {
   static const priceComparison = 'priceComparison';
   static const preOrder = 'preOrder'; 
   static const myOrders = 'myOrders'; 
-  static const qrExpress = 'qrExpress'; 
+  static const qrExpress = 'qrExpress';
+  static const loyaltyRewards = 'loyaltyRewards';
 }

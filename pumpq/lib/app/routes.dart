@@ -9,7 +9,7 @@ import 'package:pumpq/features/price_comparison/presentation/price_comparison_sc
 import 'package:pumpq/features/pre_order/presentation/pre_order_screen.dart';
 import 'package:pumpq/features/qr_express/presentation/my_orders_screen.dart';
 import 'package:pumpq/features/qr_express/presentation/qr_display_screen.dart';
-
+import 'package:pumpq/features/loyalty_rewards/presentation/loyalty_screen.dart'; 
 
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -57,6 +57,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => QrDisplayScreen(
           orderId: int.parse(state.pathParameters['orderId']!),
         ),
+      ),
+      GoRoute(
+        path: '/loyalty',
+        name: AppRoute.loyaltyRewards,
+        builder: (context, state) => const LoyaltyScreen(),
       ),
     ],
   );

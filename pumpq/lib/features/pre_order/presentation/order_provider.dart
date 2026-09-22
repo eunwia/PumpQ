@@ -73,7 +73,6 @@ class GenerateQrNotifier extends Notifier<AsyncValue<OrderModel?>> {
       final order = await ref.read(orderRepositoryProvider).generateQr(orderId);
       state = AsyncValue.data(order);
     } catch (e, st) {
-      print('QR GENERATE ERROR: $e'); // TEMPORARY DEBUG LINE
       state = AsyncValue.error(e, st);
     }
   }
