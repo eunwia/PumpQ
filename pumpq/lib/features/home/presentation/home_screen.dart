@@ -49,13 +49,17 @@ class HomeScreen extends ConsumerWidget {
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
                 childAspectRatio: 1.1,
-                children: const [
-                  _FeatureCard(icon: Icons.map, label: 'Station Map'),
-                  _FeatureCard(icon: Icons.price_change, label: 'Compare Prices'),
-                  _FeatureCard(icon: Icons.qr_code, label: 'QR Express'),
-                  _FeatureCard(icon: Icons.card_giftcard, label: 'Loyalty Rewards'),
-                  _FeatureCard(icon: Icons.account_balance_wallet, label: 'Wallet'),
-                  _FeatureCard(icon: Icons.insights, label: 'Insights'),
+                children: [
+                  _FeatureCard(
+                    icon: Icons.map,
+                    label: 'Station Map',
+                    onTap: () => context.pushNamed(AppRoute.stationMap),
+                  ),
+                  const _FeatureCard(icon: Icons.price_change, label: 'Compare Prices'),
+                  const _FeatureCard(icon: Icons.qr_code, label: 'QR Express'),
+                  const _FeatureCard(icon: Icons.card_giftcard, label: 'Loyalty Rewards'),
+                  const _FeatureCard(icon: Icons.account_balance_wallet, label: 'Wallet'),
+                  const _FeatureCard(icon: Icons.insights, label: 'Insights'),
                 ],
               ),
             ],
@@ -67,10 +71,11 @@ class HomeScreen extends ConsumerWidget {
 }
 
 class _FeatureCard extends StatelessWidget {
-  const _FeatureCard({required this.icon, required this.label});
+  const _FeatureCard({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -80,11 +85,12 @@ class _FeatureCard extends StatelessWidget {
       elevation: 1,
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label coming soon')),
-          );
-        },
+        onTap: onTap ??
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$label coming soon')),
+              );
+            },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(

@@ -4,6 +4,8 @@ import 'package:pumpq/app/route_names.dart';
 import 'package:pumpq/features/auth/presentation/login_screen.dart';
 import 'package:pumpq/features/auth/presentation/register_screen.dart';
 import 'package:pumpq/features/home/presentation/home_screen.dart';
+import 'package:pumpq/features/station_map/presentation/station_map_screen.dart'; // ADD THIS IMPORT
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -23,6 +25,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/home',
         name: AppRoute.home,
         builder: (context, state) => const HomeScreen(),
+      ),
+       GoRoute(
+        path: '/station-map',
+        name: AppRoute.stationMap,
+        builder: (context, state) => const StationMapScreen(),
       ),
     ],
   );
