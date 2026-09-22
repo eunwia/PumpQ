@@ -70,7 +70,11 @@ class HomeScreen extends ConsumerWidget {
                     label: 'Loyalty Rewards',
                     onTap: () => context.pushNamed(AppRoute.loyaltyRewards),
                   ),
-                  const _FeatureCard(icon: Icons.account_balance_wallet, label: 'Wallet'),
+                  _FeatureCard(
+                    icon: Icons.account_balance_wallet,
+                    label: 'Wallet',
+                    onTap: () => context.pushNamed(AppRoute.wallet),
+                  ),
                   const _FeatureCard(icon: Icons.insights, label: 'Insights'),
                 ],
               ),

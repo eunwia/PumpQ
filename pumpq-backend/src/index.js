@@ -15,6 +15,7 @@ const orderRoutes = require('./routes/order.routes');
 const stationRoutes = require('./routes/station.routes');
 const qrRoutes = require('./routes/qr.routes');
 const loyaltyRoutes = require('./routes/loyalty.routes');
+const walletRoutes = require('./routes/wallet.routes');
 
 
 
@@ -25,6 +26,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/stations', stationRoutes);
 app.use('/api/qr', qrRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
+app.use('/api/wallet', walletRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, data: {}, message: 'PumpQ API is running' });

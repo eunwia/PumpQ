@@ -8,4 +8,5 @@ abstract final class AppRoute {
   static const myOrders = 'myOrders'; 
   static const qrExpress = 'qrExpress';
   static const loyaltyRewards = 'loyaltyRewards';
+  static const wallet = 'wallet';
 }
