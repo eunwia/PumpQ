@@ -9,4 +9,5 @@ abstract final class AppRoute {
   static const qrExpress = 'qrExpress';
   static const loyaltyRewards = 'loyaltyRewards';
   static const wallet = 'wallet';
+  static const insights = 'insights';
 }

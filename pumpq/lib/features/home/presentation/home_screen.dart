@@ -75,7 +75,11 @@ class HomeScreen extends ConsumerWidget {
                     label: 'Wallet',
                     onTap: () => context.pushNamed(AppRoute.wallet),
                   ),
-                  const _FeatureCard(icon: Icons.insights, label: 'Insights'),
+                  _FeatureCard(
+                    icon: Icons.insights,
+                    label: 'Insights',
+                    onTap: () => context.pushNamed(AppRoute.insights),
+                  ),
                 ],
               ),
             ],

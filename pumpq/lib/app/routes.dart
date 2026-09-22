@@ -11,7 +11,7 @@ import 'package:pumpq/features/qr_express/presentation/my_orders_screen.dart';
 import 'package:pumpq/features/qr_express/presentation/qr_display_screen.dart';
 import 'package:pumpq/features/loyalty_rewards/presentation/loyalty_screen.dart'; 
 import 'package:pumpq/features/wallet/presentation/wallet_screen.dart'; 
-
+import 'package:pumpq/features/ai_insights/presentation/insights_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -68,6 +68,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/wallet',
         name: AppRoute.wallet,
         builder: (context, state) => const WalletScreen(),
+      ),
+      GoRoute(
+        path: '/insights',
+        name: AppRoute.insights,
+        builder: (context, state) => const InsightsScreen(),
       ),
     ],
   );
