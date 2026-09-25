@@ -17,6 +17,11 @@ class HomeScreen extends ConsumerWidget {
         title: const Text('PumpQ'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profile',
+            onPressed: () => context.pushNamed(AppRoute.profile),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             tooltip: 'Logout',
             onPressed: () async {

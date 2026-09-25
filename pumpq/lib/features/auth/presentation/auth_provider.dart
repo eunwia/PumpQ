@@ -91,6 +91,24 @@ class AuthNotifier extends Notifier<AuthState> {
     state = const AuthState();
   }
 
+  Future<bool> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+  }) async {
+    try {
+      final user = await _repo.updateProfile(
+        firstName: firstName,
+        lastName: lastName,
+        phoneNumber: phoneNumber,
+      );
+      state = state.copyWith(user: user);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   String _readableError(Object e) {
     if (e is DioException) {
       final data = e.response?.data;

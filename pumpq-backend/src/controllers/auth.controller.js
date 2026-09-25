@@ -118,10 +118,41 @@ async function me(req, res) {
     return fail(res, 500, 'Server error');
   }
 }
+async function updateMe(req, res) {
+  try {
+    const { first_name, last_name, phone_number } = req.body || {};
+
+    const updates = {};
+    if (first_name !== undefined) updates.first_name = String(first_name).trim();
+    if (last_name !== undefined) updates.last_name = String(last_name).trim();
+    if (phone_number !== undefined) updates.phone_number = phone_number || null;
+
+    if (Object.keys(updates).length === 0) {
+      return fail(res, 400, 'Nothing to update');
+    }
+
+    const { data: user, error } = await supabase
+      .from('user')
+      .update(updates)
+      .eq('user_id', req.userId)
+      .select(USER_FIELDS)
+      .single();
+
+    if (error) {
+      console.error(error);
+      return fail(res, 500, 'Could not update profile');
+    }
+
+    return ok(res, 200, { user }, 'Profile updated');
+  } catch (err) {
+    console.error(err);
+    return fail(res, 500, 'Server error');
+  }
+}
 
 // JWTs are stateless, so the app logs out by deleting its stored token.
 async function logout(req, res) {
   return ok(res, 200, {}, 'Logged out');
 }
 
-module.exports = { register, login, me, logout };
+module.exports = { register, login, me, logout, updateMe };

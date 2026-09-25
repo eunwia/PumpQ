@@ -50,6 +50,20 @@ class AuthRepository {
     }
   }
 
+  Future<UserModel> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? phoneNumber,
+  }) async {
+    final response = await _api.client.put('/auth/me', data: {
+      if (firstName != null) 'first_name': firstName,
+      if (lastName != null) 'last_name': lastName,
+      if (phoneNumber != null) 'phone_number': phoneNumber,
+    });
+    final data = response.data['data']['user'] as Map<String, dynamic>;
+    return UserModel.fromJson(data);
+  }
+
   AuthResult _parseAuthResult(Map<String, dynamic> body) {
     final data = body['data'] as Map<String, dynamic>;
     return AuthResult(
