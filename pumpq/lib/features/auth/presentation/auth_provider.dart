@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pumpq/core/services/api_service.dart';
+import 'package:pumpq/core/services/notification_service.dart';
 import 'package:pumpq/features/auth/data/auth_repository.dart';
 import 'package:pumpq/models/user_model.dart';
 
@@ -54,6 +55,7 @@ class AuthNotifier extends Notifier<AuthState> {
       final result = await _repo.login(email: email, password: password);
       await _api.saveToken(result.token);
       state = AuthState(user: result.user, isLoading: false);
+      _syncFcmToken();
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _readableError(e));
@@ -79,6 +81,7 @@ class AuthNotifier extends Notifier<AuthState> {
       );
       await _api.saveToken(result.token);
       state = AuthState(user: result.user, isLoading: false);
+      _syncFcmToken();
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false, error: _readableError(e));
@@ -106,6 +109,17 @@ class AuthNotifier extends Notifier<AuthState> {
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  Future<void> _syncFcmToken() async {
+    try {
+      final token = await NotificationService().getToken();
+      if (token != null) {
+        await _repo.updateFcmToken(token);
+      }
+    } catch (_) {
+      // Non-critical — notifications just won't reach this device yet.
     }
   }
 

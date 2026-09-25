@@ -150,9 +150,30 @@ async function updateMe(req, res) {
   }
 }
 
+async function updateFcmToken(req, res) {
+  try {
+    const { fcm_token } = req.body || {};
+    if (!fcm_token) return fail(res, 400, 'fcm_token is required');
+
+    const { error } = await supabase
+      .from('user')
+      .update({ fcm_token })
+      .eq('user_id', req.userId);
+
+    if (error) {
+      console.error(error);
+      return fail(res, 500, 'Could not save token');
+    }
+
+    return ok(res, 200, {}, 'Token saved');
+  } catch (err) {
+    console.error(err);
+    return fail(res, 500, 'Server error');
+  }
+}
 // JWTs are stateless, so the app logs out by deleting its stored token.
 async function logout(req, res) {
   return ok(res, 200, {}, 'Logged out');
 }
 
-module.exports = { register, login, me, logout, updateMe };
+module.exports = { register, login, me, logout, updateMe, updateFcmToken };

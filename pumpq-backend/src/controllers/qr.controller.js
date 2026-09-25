@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
+const admin = require('../config/firebaseAdmin');
 
 const ok = (res, status, data, message) =>
   res.status(status).json({ success: true, data, message });
@@ -102,6 +103,28 @@ async function validateQr(req, res) {
     // Award loyalty points: 1 point per liter, cross-brand.
     const pointsEarned = Math.floor(order.liters);
     await creditLoyaltyPoints(order.user_id, order.order_id, pointsEarned);
+
+        // Send a push notification to the customer, if they have a registered device.
+    try {
+      const { data: user } = await supabase
+        .from('user')
+        .select('fcm_token')
+        .eq('user_id', order.user_id)
+        .maybeSingle();
+
+      if (user?.fcm_token) {
+        await admin.messaging().send({
+          token: user.fcm_token,
+          notification: {
+            title: 'Order Confirmed!',
+            body: `Your ${order.liters}L ${order.fuel_type} order has been fulfilled. You earned ${pointsEarned} points.`,
+          },
+        });
+      }
+    } catch (pushError) {
+      console.error('Push notification failed:', pushError);
+      // Non-fatal — the order is already confirmed regardless.
+    }
 
     return ok(res, 200, { order: confirmed, points_earned: pointsEarned }, 'Order confirmed');
   } catch (err) {

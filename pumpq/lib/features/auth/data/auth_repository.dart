@@ -71,4 +71,7 @@ class AuthRepository {
       token: data['token'] as String,
     );
   }
+  Future<void> updateFcmToken(String token) async {
+    await _api.client.put('/auth/fcm-token', data: {'fcm_token': token});
+  }
 }
