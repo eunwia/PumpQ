@@ -31,11 +31,17 @@ class OrderRepository {
     final data = response.data['data']['order'] as Map<String, dynamic>;
     return OrderModel.fromJson(data);
   }
-    Future<OrderModel> generateQr(int orderId) async {
+  Future<OrderModel> generateQr(int orderId) async {
     final response = await _api.client.post('/qr/generate', data: {
       'order_id': orderId,
     });
     final data = response.data['data']['order'] as Map<String, dynamic>;
     return OrderModel.fromJson(data);
+  }
+  Future<Map<String, dynamic>> payOrder(int orderId, String method) async {
+    final response = await _api.client.put('/orders/$orderId/pay', data: {
+      'method': method,
+    });
+    return response.data['data'] as Map<String, dynamic>;
   }
 }

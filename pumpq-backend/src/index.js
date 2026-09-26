@@ -17,7 +17,7 @@ const qrRoutes = require('./routes/qr.routes');
 const loyaltyRoutes = require('./routes/loyalty.routes');
 const walletRoutes = require('./routes/wallet.routes');
 const insightsRoutes = require('./routes/insights.routes');
-
+const promotionRoutes = require('./routes/promotion.routes');
 
 
 const app = express();
@@ -29,6 +29,7 @@ app.use('/api/qr', qrRoutes);
 app.use('/api/loyalty', loyaltyRoutes);
 app.use('/api/wallet', walletRoutes);
 app.use('/api/insights', insightsRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, data: {}, message: 'PumpQ API is running' });

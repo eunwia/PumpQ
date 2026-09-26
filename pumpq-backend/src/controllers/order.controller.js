@@ -7,7 +7,7 @@ const fail = (res, status, message) =>
   res.status(status).json({ success: false, data: null, message });
 
 const ORDER_FIELDS =
-  'order_id, user_id, station_id, qr_code, fuel_type, liters, amount, status, scheduled_at, created_at';
+  'order_id, user_id, station_id, qr_code, fuel_type, liters, amount, status, payment_status, scheduled_at, created_at';
 
 async function createOrder(req, res) {
   try {
@@ -61,6 +61,67 @@ async function createOrder(req, res) {
     }
 
     return ok(res, 201, { order }, 'Order created');
+  } catch (err) {
+    console.error(err);
+    return fail(res, 500, 'Server error');
+  }
+}
+
+async function payOrder(req, res) {
+  try {
+    const { method } = req.body || {};
+    if (!['wallet', 'offline'].includes(method)) {
+      return fail(res, 400, "method must be 'wallet' or 'offline'");
+    }
+
+    const { data: order, error } = await supabase
+      .from('order')
+      .select('order_id, user_id, amount, status, payment_status')
+      .eq('order_id', req.params.id)
+      .eq('user_id', req.userId)
+      .maybeSingle();
+
+    if (error) return fail(res, 500, 'Server error');
+    if (!order) return fail(res, 404, 'Order not found');
+    if (order.status !== 'pending') {
+      return fail(res, 409, `Cannot change payment for an order that is ${order.status}`);
+    }
+
+    const { data: wallet } = await supabase
+      .from('wallet')
+      .select('wallet_id, balance')
+      .eq('user_id', req.userId)
+      .maybeSingle();
+
+    // Switching away from a wallet payment refunds it first.
+    if (order.payment_status === 'paid_wallet' && method !== 'wallet' && wallet) {
+      const refunded = Number((wallet.balance + order.amount).toFixed(2));
+      await supabase.from('wallet').update({ balance: refunded }).eq('wallet_id', wallet.wallet_id);
+      await supabase.from('wallet_transaction').insert({
+        wallet_id: wallet.wallet_id, amount: order.amount,
+        transaction_type: 'order_refund', reference_id: `ORDER-${order.order_id}`,
+      });
+    }
+
+    if (method === 'wallet') {
+      if (order.payment_status === 'paid_wallet') {
+        return ok(res, 200, { payment_status: 'paid_wallet' }, 'Already paid via wallet');
+      }
+      if (!wallet || wallet.balance < order.amount) {
+        return fail(res, 400, 'Insufficient wallet balance');
+      }
+      const newBalance = Number((wallet.balance - order.amount).toFixed(2));
+      await supabase.from('wallet').update({ balance: newBalance }).eq('wallet_id', wallet.wallet_id);
+      await supabase.from('wallet_transaction').insert({
+        wallet_id: wallet.wallet_id, amount: order.amount,
+        transaction_type: 'order_payment', reference_id: `ORDER-${order.order_id}`,
+      });
+      await supabase.from('order').update({ payment_status: 'paid_wallet' }).eq('order_id', order.order_id);
+      return ok(res, 200, { payment_status: 'paid_wallet', wallet_balance: newBalance }, 'Paid via wallet');
+    }
+
+    await supabase.from('order').update({ payment_status: 'pay_at_station' }).eq('order_id', order.order_id);
+    return ok(res, 200, { payment_status: 'pay_at_station' }, 'Set to pay at station');
   } catch (err) {
     console.error(err);
     return fail(res, 500, 'Server error');
@@ -146,4 +207,4 @@ async function cancelOrder(req, res) {
   }
 }
 
-module.exports = { createOrder, listOrders, getOrder, cancelOrder };
+module.exports = { createOrder, listOrders, getOrder, cancelOrder, payOrder };

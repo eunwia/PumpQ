@@ -5,6 +5,7 @@ class OrderModel {
   final double liters;
   final double amount;
   final String status;
+  final String paymentStatus;
   final String? qrCode;
   final DateTime createdAt;
 
@@ -15,6 +16,7 @@ class OrderModel {
     required this.liters,
     required this.amount,
     required this.status,
+    required this.paymentStatus,
     this.qrCode,
     required this.createdAt,
   });
@@ -27,6 +29,7 @@ class OrderModel {
       liters: (json['liters'] as num).toDouble(),
       amount: (json['amount'] as num).toDouble(),
       status: json['status'] as String,
+      paymentStatus: json['payment_status'] as String? ?? 'unpaid',
       qrCode: json['qr_code'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pumpq/features/auth/presentation/auth_provider.dart';
 import 'package:pumpq/features/pre_order/data/order_repository.dart';
 import 'package:pumpq/models/order_model.dart';
+import 'package:dio/dio.dart';
+import 'package:pumpq/features/wallet/presentation/wallet_provider.dart';
 
 final orderRepositoryProvider = Provider<OrderRepository>((ref) {
   return OrderRepository(ref.watch(apiServiceProvider));
@@ -82,3 +84,37 @@ class GenerateQrNotifier extends Notifier<AsyncValue<OrderModel?>> {
 
 final generateQrProvider =
     NotifierProvider<GenerateQrNotifier, AsyncValue<OrderModel?>>(GenerateQrNotifier.new);
+
+class PayOrderState {
+  final bool isLoading;
+  final String? error;
+  final bool success;
+
+  const PayOrderState({this.isLoading = false, this.error, this.success = false});
+}
+
+class PayOrderNotifier extends Notifier<PayOrderState> {
+  @override
+  PayOrderState build() => const PayOrderState();
+
+  Future<void> pay(int orderId, String method) async {
+    state = const PayOrderState(isLoading: true);
+    try {
+      await ref.read(orderRepositoryProvider).payOrder(orderId, method);
+      state = const PayOrderState(success: true);
+      ref.invalidate(myOrdersProvider);
+      ref.invalidate(walletProvider);
+    } catch (e) {
+      String message = 'Payment failed. Please try again.';
+      if (e is DioException) {
+        final data = e.response?.data;
+        if (data is Map && data['message'] is String) message = data['message'] as String;
+      }
+      state = PayOrderState(error: message);
+    }
+  }
+
+  void reset() => state = const PayOrderState();
+}
+
+final payOrderProvider = NotifierProvider<PayOrderNotifier, PayOrderState>(PayOrderNotifier.new);

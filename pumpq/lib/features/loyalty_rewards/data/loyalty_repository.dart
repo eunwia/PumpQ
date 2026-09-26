@@ -18,4 +18,7 @@ class LoyaltyRepository {
         .map((e) => LoyaltyTransactionModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+  Future<void> redeem(int points) async {
+    await _api.client.post('/loyalty/redeem', data: {'points': points});
+  }
 }
