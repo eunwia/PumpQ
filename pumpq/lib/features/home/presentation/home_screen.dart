@@ -249,25 +249,28 @@ class _StationTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.background)),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             width: 44, height: 44,
-            decoration: BoxDecoration(color: _brandColor(), borderRadius: BorderRadius.circular(10)),
             alignment: Alignment.center,
+            decoration: BoxDecoration(color: _brandColor(), borderRadius: BorderRadius.circular(10)),
             child: Text(station.fuelBrand.substring(0, 1),
                 style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18)),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(station.name, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 2),
-                Row(
+                Wrap(
+                  spacing: 4,
                   children: [
                     if (distanceKm != null)
-                      Text('${distanceKm!.toStringAsFixed(1)} km · ', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                      Text('${distanceKm!.toStringAsFixed(1)} km ·', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                     Text(station.isOpen ? '✓ Open' : 'Closed',
                         style: TextStyle(color: station.isOpen ? AppColors.success : AppColors.error, fontSize: 12)),
                   ],
@@ -275,8 +278,10 @@ class _StationTile extends StatelessWidget {
               ],
             ),
           ),
+          const SizedBox(width: 8),
           if (price != null)
             Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text('₱${price!.price.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
@@ -284,6 +289,45 @@ class _StationTile extends StatelessWidget {
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _InsightsBanner extends StatelessWidget {
+  const _InsightsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.pushNamed(AppRoute.insights),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: AppColors.textPrimary, borderRadius: BorderRadius.circular(16)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 42, height: 42,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.2), shape: BoxShape.circle),
+              child: const Icon(Icons.insights, color: AppColors.primary),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Smart Insights', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('Budget tracking & refuel predictions', style: const TextStyle(color: Colors.white70, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right, color: Colors.white70),
+          ],
+        ),
       ),
     );
   }

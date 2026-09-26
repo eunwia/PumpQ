@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -50,46 +51,29 @@ class LoyaltyScreen extends ConsumerWidget {
     final historyAsync = ref.watch(loyaltyHistoryProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Loyalty Rewards')),
+      backgroundColor: AppColors.background,
+      appBar: AppBar(backgroundColor: AppColors.background, elevation: 0, title: const Text('Loyalty Rewards')),
       body: loyaltyAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Could not load loyalty info')),
         data: (loyalty) => ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            _TierCard(
+            _TierDonutCard(
               loyalty: loyalty,
               onRedeem: () => _showRedeemDialog(context, ref, loyalty.pointsBalance),
             ),
             const SizedBox(height: 24),
-            Text('History', style: Theme.of(context).textTheme.titleMedium),
+            const Text('Activity', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
             historyAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, __) => const Text('Could not load history'),
               data: (transactions) {
                 if (transactions.isEmpty) {
-                  return const Text('No activity yet',
-                      style: TextStyle(color: AppColors.textSecondary));
+                  return const Text('No activity yet', style: TextStyle(color: AppColors.textSecondary));
                 }
-                return Column(
-                  children: transactions.map((tx) {
-                    final isEarn = tx.pointsEarned > 0;
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: Icon(
-                        isEarn ? Icons.add_circle : Icons.remove_circle,
-                        color: isEarn ? AppColors.success : AppColors.primary,
-                      ),
-                      title: Text(isEarn
-                          ? '+${tx.pointsEarned} points earned'
-                          : '-${tx.pointsRedeemed} points redeemed'),
-                      subtitle: Text(
-                        '${tx.createdAt.month}/${tx.createdAt.day}/${tx.createdAt.year}',
-                      ),
-                    );
-                  }).toList(),
-                );
+                return Column(children: transactions.map((tx) => _ActivityTile(tx: tx)).toList());
               },
             ),
           ],
@@ -99,8 +83,8 @@ class LoyaltyScreen extends ConsumerWidget {
   }
 }
 
-class _TierCard extends StatelessWidget {
-  const _TierCard({required this.loyalty, required this.onRedeem});
+class _TierDonutCard extends StatelessWidget {
+  const _TierDonutCard({required this.loyalty, required this.onRedeem});
   final LoyaltyModel loyalty;
   final VoidCallback onRedeem;
 
@@ -108,48 +92,48 @@ class _TierCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '${loyalty.tier} Tier',
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${loyalty.pointsBalance} points',
-            style: const TextStyle(color: AppColors.white, fontSize: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 90, height: 90,
+                child: CustomPaint(
+                  painter: _DonutPainter(percent: loyalty.tier == 'Gold' ? 1.0 : loyalty.tierProgress, color: AppColors.white),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('${loyalty.pointsBalance}', style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 20)),
+                        const Text('pts', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${loyalty.tier} Tier', style: const TextStyle(color: AppColors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 4),
+                    Text(
+                      loyalty.tier == 'Gold' ? 'Highest tier reached!' : '${loyalty.pointsToNextTier} pts to next tier',
+                      style: const TextStyle(color: Colors.white70, fontSize: 12),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
-          if (loyalty.tier != 'Gold') ...[
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: loyalty.tierProgress.clamp(0.0, 1.0),
-                minHeight: 8,
-                backgroundColor: AppColors.white.withValues(alpha: 0.3),
-                valueColor: const AlwaysStoppedAnimation(AppColors.white),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${loyalty.pointsToNextTier} points to next tier',
-              style: const TextStyle(color: AppColors.white, fontSize: 13),
-            ),
-          ] else
-            const Text(
-              'Highest tier reached!',
-              style: TextStyle(color: AppColors.white, fontSize: 13),
-            ),
-          const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
@@ -157,6 +141,65 @@ class _TierCard extends StatelessWidget {
               onPressed: onRedeem,
               child: const Text('Redeem Points', style: TextStyle(color: AppColors.white)),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DonutPainter extends CustomPainter {
+  _DonutPainter({required this.percent, required this.color});
+  final double percent;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 7;
+    final bgPaint = Paint()..color = Colors.white24..style = PaintingStyle.stroke..strokeWidth = 10..strokeCap = StrokeCap.round;
+    final fgPaint = Paint()..color = color..style = PaintingStyle.stroke..strokeWidth = 10..strokeCap = StrokeCap.round;
+    canvas.drawCircle(center, radius, bgPaint);
+    canvas.drawArc(Rect.fromCircle(center: center, radius: radius), -math.pi / 2, 2 * math.pi * percent.clamp(0.0, 1.0), false, fgPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _DonutPainter oldDelegate) => oldDelegate.percent != percent;
+}
+
+class _ActivityTile extends StatelessWidget {
+  const _ActivityTile({required this.tx});
+  final LoyaltyTransactionModel tx;
+
+  @override
+  Widget build(BuildContext context) {
+    final isEarn = tx.pointsEarned > 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          Container(
+            width: 42, height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: (isEarn ? AppColors.success : AppColors.primary).withValues(alpha: 0.12), shape: BoxShape.circle),
+            child: Icon(isEarn ? Icons.add_circle : Icons.remove_circle, color: isEarn ? AppColors.success : AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(isEarn ? 'Points earned' : 'Points redeemed', style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('${tx.createdAt.month}/${tx.createdAt.day}/${tx.createdAt.year}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+              ],
+            ),
+          ),
+          Text(
+            isEarn ? '+${tx.pointsEarned}' : '-${tx.pointsRedeemed}',
+            style: TextStyle(fontWeight: FontWeight.bold, color: isEarn ? AppColors.success : AppColors.primary),
           ),
         ],
       ),

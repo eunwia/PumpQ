@@ -81,6 +81,15 @@ class _PriceCard extends StatelessWidget {
   final bool isCheapest;
   final VoidCallback? onTap;
 
+  Color _brandColor() {
+    switch (posting.fuelBrand.toLowerCase()) {
+      case 'shell': return const Color(0xFFFFD100);
+      case 'petron': return const Color(0xFF003DA5);
+      case 'caltex': return const Color(0xFFD8232A);
+      default: return AppColors.primary;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Material(
@@ -90,53 +99,56 @@ class _PriceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: isCheapest ? Border.all(color: AppColors.primary, width: 2) : null,
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              Container(
+                width: 44, height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: _brandColor(), borderRadius: BorderRadius.circular(10)),
+                child: Text(posting.fuelBrand.substring(0, 1),
+                    style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
+                    Text(posting.stationName, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        Text(posting.stationName,
-                            style: const TextStyle(fontWeight: FontWeight.w600)),
-                        if (isCheapest) ...[
-                          const SizedBox(width: 8),
+                        Text('${posting.fuelBrand} · ${posting.fuelType}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        if (isCheapest)
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Text('Best price',
-                                style: TextStyle(color: AppColors.white, fontSize: 11)),
+                            decoration: BoxDecoration(color: AppColors.primary, borderRadius: BorderRadius.circular(8)),
+                            child: const Text('Best price', style: TextStyle(color: AppColors.white, fontSize: 10)),
                           ),
-                        ],
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    Text('${posting.fuelBrand} · ${posting.fuelType}',
-                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     if (!posting.availability) ...[
                       const SizedBox(height: 4),
-                      const Text('Currently unavailable',
-                          style: TextStyle(color: AppColors.error, fontSize: 12)),
+                      const Text('Currently unavailable', style: TextStyle(color: AppColors.error, fontSize: 12)),
                     ],
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Text(
                 '₱${posting.price.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary),
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                softWrap: false,
               ),
             ],
           ),
