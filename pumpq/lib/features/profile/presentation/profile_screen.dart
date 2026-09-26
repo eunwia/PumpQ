@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pumpq/app/route_names.dart';
 import 'package:pumpq/core/constants/app_colors.dart';
+import 'package:pumpq/core/services/text_scale_provider.dart';
 import 'package:pumpq/features/auth/presentation/auth_provider.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -123,6 +124,10 @@ class ProfileScreen extends ConsumerWidget {
                         value: user?.phoneNumber?.isNotEmpty == true ? user!.phoneNumber! : 'Not set',
                       ),
                     ]),
+                    const SizedBox(height: 24),
+                    const Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    const _AppearanceCard(),
                   ],
                 ),
               ),
@@ -192,4 +197,53 @@ class _InfoRow {
   final IconData icon;
   final String label;
   final String value;
+}
+
+class _AppearanceCard extends ConsumerWidget {
+  const _AppearanceCard();
+
+  static const _options = [
+    (label: 'Small', scale: 0.9),
+    (label: 'Normal', scale: 1.0),
+    (label: 'Large', scale: 1.15),
+    (label: 'Extra Large', scale: 1.3),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentScale = ref.watch(textScaleProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.text_fields, color: AppColors.primary, size: 20),
+              SizedBox(width: 8),
+              Text('Text Size', style: TextStyle(fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _options.map((opt) {
+              final selected = (currentScale - opt.scale).abs() < 0.01;
+              return ChoiceChip(
+                label: Text(opt.label),
+                selected: selected,
+                onSelected: (_) => ref.read(textScaleProvider.notifier).setScale(opt.scale),
+                selectedColor: AppColors.primary,
+                labelStyle: TextStyle(color: selected ? AppColors.white : AppColors.textPrimary, fontSize: 12),
+                backgroundColor: AppColors.background,
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
 }
