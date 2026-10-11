@@ -60,3 +60,15 @@ async function me(req, res) {
 }
 
 module.exports = { register, login, me };
+
+async function updateMe(req, res) {
+  const { first_name, last_name, contact_number } = req.body || {};
+  const updates = {};
+  if (first_name !== undefined) updates.first_name = first_name;
+  if (last_name !== undefined) updates.last_name = last_name;
+  if (contact_number !== undefined) updates.contact_number = contact_number;
+  const { data: staff, error } = await supabase.from('staff').update(updates).eq('staff_id', req.staffId).select(STAFF_FIELDS).single();
+  if (error) return fail(res, 500, 'Could not update');
+  return ok(res, 200, { staff }, 'Updated');
+}
+module.exports = { register, login, me, updateMe };
