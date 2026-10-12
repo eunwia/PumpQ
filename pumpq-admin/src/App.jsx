@@ -10,11 +10,7 @@ import Promotions from './pages/Promotions';
 import Transactions from './pages/Transactions';
 import Notifications from './pages/Notifications';
 import Reports from './pages/Reports';
-
-function Dashboard() {
-  const { staff } = useAuth();
-  return <div><h2>Dashboard</h2><p>Welcome, {staff?.first_name}!</p></div>;
-}
+import Dashboard from './pages/Dashboard';
 
 function PrivateRoute({ children }) {
   const { staff } = useAuth();
@@ -36,7 +32,7 @@ export default function App() {
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/reports" element={<Reports />} />          
+            <Route path="/reports" element={<Reports />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
