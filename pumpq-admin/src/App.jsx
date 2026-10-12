@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import Promotions from './pages/Promotions';
 import Transactions from './pages/Transactions';
 import Notifications from './pages/Notifications';
+import Reports from './pages/Reports';
 
 function Dashboard() {
   const { staff } = useAuth();
@@ -34,7 +35,8 @@ export default function App() {
             <Route path="/station-services" element={<StationServices />} />
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/transactions" element={<Transactions />} />
-            <Route path="/notifications" element={<Notifications />} />          
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/reports" element={<Reports />} />          
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>

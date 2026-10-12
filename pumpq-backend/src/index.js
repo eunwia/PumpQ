@@ -24,6 +24,7 @@ const staffStationRoutes = require('./routes/staffStation.routes');
 const staffPromotionRoutes = require('./routes/staffPromotion.routes');
 const staffOrderRoutes = require('./routes/staffOrder.routes');
 const staffNotificationRoutes = require('./routes/staffNotification.routes');
+const staffReportsRoutes = require('./routes/staffReports.routes');
 
 
 const app = express();
@@ -42,6 +43,7 @@ app.use('/api/staff/stations', staffStationRoutes);
 app.use('/api/staff/promotions', staffPromotionRoutes);
 app.use('/api/staff/orders', staffOrderRoutes);
 app.use('/api/staff/notifications', staffNotificationRoutes);
+app.use('/api/staff/reports', staffReportsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, data: {}, message: 'PumpQ API is running' });
