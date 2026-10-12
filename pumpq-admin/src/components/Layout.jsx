@@ -14,6 +14,9 @@ export default function Layout() {
           <Link style={navStyle} to="/dashboard">Dashboard</Link>
           <Link style={navStyle} to="/account">My Account</Link>
           <Link style={navStyle} to="/products">Products</Link>
+          <Link style={navStyle} to="/station-services">Station Services</Link>
+          <Link style={navStyle} to="/promotions">Promotions</Link>
+          <Link style={navStyle} to="/transactions">Transactions</Link>
         </nav>
         <button onClick={logout} style={{ marginTop: 20 }}>Logout</button>
       </div>

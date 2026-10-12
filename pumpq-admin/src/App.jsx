@@ -4,7 +4,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Account from './pages/Account';
 import Products from './pages/Products';
+import StationServices from './pages/StationServices';
 import Layout from './components/Layout';
+import Promotions from './pages/Promotions';
+import Transactions from './pages/Transactions';
 
 function Dashboard() {
   const { staff } = useAuth();
@@ -27,6 +30,9 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/account" element={<Account />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/station-services" element={<StationServices />} />
+            <Route path="/promotions" element={<Promotions />} />
+            <Route path="/transactions" element={<Transactions />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
