@@ -13,6 +13,7 @@ export default function Layout() {
         <nav>
           <Link style={navStyle} to="/dashboard">Dashboard</Link>
           <Link style={navStyle} to="/account">My Account</Link>
+          <Link style={navStyle} to="/products">Products</Link>
         </nav>
         <button onClick={logout} style={{ marginTop: 20 }}>Logout</button>
       </div>

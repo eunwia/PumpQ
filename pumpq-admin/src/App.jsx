@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Account from './pages/Account';
+import Products from './pages/Products';
 import Layout from './components/Layout';
 
 function Dashboard() {
@@ -25,6 +26,7 @@ export default function App() {
           <Route element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/products" element={<Products />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
