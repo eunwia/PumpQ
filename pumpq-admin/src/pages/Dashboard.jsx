@@ -3,70 +3,75 @@ import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
 const COLORS = ['#E8450A', '#F5A623', '#2E7D32', '#003DA5', '#8a3a1f'];
+const CARD = { background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' };
 
-function BarChart({ data }) {
+function SmoothLine({ data }) {
   const entries = Object.entries(data);
+  if (entries.length === 0) return <p style={{ color: '#aaa' }}>No data yet</p>;
   const max = Math.max(...entries.map(([, v]) => v), 1);
+  const w = 480, h = 140, pad = 20;
+  const step = entries.length > 1 ? (w - pad * 2) / (entries.length - 1) : 0;
+  const pts = entries.map(([, v], i) => [pad + i * step, h - pad - (v / max) * (h - pad * 2)]);
+
+  const path = pts.reduce((acc, [x, y], i) => {
+    if (i === 0) return `M${x},${y}`;
+    const [px, py] = pts[i - 1];
+    const cx = (px + x) / 2;
+    return acc + ` C${cx},${py} ${cx},${y} ${x},${y}`;
+  }, '');
+  const areaPath = `${path} L${pts[pts.length - 1][0]},${h - pad} L${pts[0][0]},${h - pad} Z`;
+
   return (
-    <svg width="100%" height="160" viewBox={`0 0 ${entries.length * 60} 160`}>
-      {entries.map(([day, val], i) => {
-        const h = (val / max) * 120;
-        return (
-          <g key={day}>
-            <rect x={i * 60 + 10} y={140 - h} width="30" height={h} rx="4" fill="#E8450A" />
-            <text x={i * 60 + 25} y="155" fontSize="9" textAnchor="middle" fill="#888">{day.slice(5)}</text>
-          </g>
-        );
-      })}
+    <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`}>
+      <defs>
+        <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E8450A" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#E8450A" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill="url(#grad)" />
+      <path d={path} fill="none" stroke="#E8450A" strokeWidth="2.5" strokeLinecap="round" />
+      {pts.map(([x, y], i) => <circle key={i} cx={x} cy={y} r="4" fill="#fff" stroke="#E8450A" strokeWidth="2" />)}
+      {entries.map(([day], i) => (
+        <text key={day} x={pts[i][0]} y={h - 2} fontSize="9" textAnchor="middle" fill="#999">{day.slice(5)}</text>
+      ))}
     </svg>
   );
 }
 
-function PieChart({ data }) {
-  const entries = Object.entries(data);
-  const total = entries.reduce((s, [, v]) => s + v, 0) || 1;
-
-  if (entries.length === 1) {
-    return (
-      <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          <circle cx="80" cy="80" r="70" fill={COLORS[0]} />
-        </svg>
-        <div style={{ fontSize: 12 }}>
-          <span style={{ width: 10, height: 10, background: COLORS[0], borderRadius: 2, display: 'inline-block', marginRight: 6 }} />
-          {entries[0][0]}: {entries[0][1].toFixed(1)} L (100%)
-        </div>
-      </div>
-    );
-  }
-
-  let angle = 0;
-  const radius = 70, cx = 80, cy = 80;
-  const slices = entries.map(([label, val], i) => {
-    const frac = val / total;
-    const start = angle;
-    angle += frac * 360;
-    const end = angle;
-    const large = end - start > 180 ? 1 : 0;
-    const x1 = cx + radius * Math.cos((Math.PI * start) / 180 - Math.PI / 2);
-    const y1 = cy + radius * Math.sin((Math.PI * start) / 180 - Math.PI / 2);
-    const x2 = cx + radius * Math.cos((Math.PI * end) / 180 - Math.PI / 2);
-    const y2 = cy + radius * Math.sin((Math.PI * end) / 180 - Math.PI / 2);
-    return { path: `M${cx},${cy} L${x1},${y1} A${radius},${radius} 0 ${large} 1 ${x2},${y2} Z`, color: COLORS[i % COLORS.length], label, val };
-  });
-
+function Donut({ percent, color, label }) {
+  const r = 60, circ = 2 * Math.PI * r;
   return (
-    <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-      <svg width="160" height="160" viewBox="0 0 160 160">
-        {slices.map((s) => <path key={s.label} d={s.path} fill={s.color} />)}
+    <div style={{ position: 'relative', width: 150, height: 150, margin: '0 auto' }}>
+      <svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r={r} fill="none" stroke="#f3f3f3" strokeWidth="14" />
+        <circle
+          cx="75" cy="75" r={r} fill="none" stroke={color} strokeWidth="14" strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={circ - (percent / 100) * circ}
+          transform="rotate(-90 75 75)"
+        />
       </svg>
-      <div>
-        {slices.map((s) => (
-          <div key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4, fontSize: 12 }}>
-            <span style={{ width: 10, height: 10, background: s.color, borderRadius: 2, display: 'inline-block' }} />
-            {s.label}: {s.val.toFixed(1)} L
-          </div>
-        ))}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 26, fontWeight: 700 }}>{percent}%</span>
+        <span style={{ fontSize: 11, color: '#999' }}>{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value, max, color }) {
+  const pct = max > 0 ? (value / max) * 100 : 0;
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, display: 'inline-block' }} />
+          {label}
+        </span>
+        <span style={{ fontWeight: 600 }}>{value.toFixed(1)} L</span>
+      </div>
+      <div style={{ background: '#f2f2f2', borderRadius: 6, height: 8 }}>
+        <div style={{ width: `${pct}%`, background: color, height: 8, borderRadius: 6, transition: 'width .3s' }} />
       </div>
     </div>
   );
@@ -74,9 +79,9 @@ function PieChart({ data }) {
 
 function Card({ label, value }) {
   return (
-    <div style={{ background: '#fff', borderRadius: 12, padding: 20, flex: 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <p style={{ margin: 0, fontSize: 12, color: '#999', textTransform: 'uppercase' }}>{label}</p>
-      <p style={{ margin: '6px 0 0', fontSize: 24, fontWeight: 700 }}>{value}</p>
+    <div style={{ ...CARD, flex: 1 }}>
+      <p style={{ margin: 0, fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</p>
+      <p style={{ margin: '8px 0 0', fontSize: 26, fontWeight: 700 }}>{value}</p>
     </div>
   );
 }
@@ -96,6 +101,10 @@ export default function Dashboard() {
   }, []);
 
   const pending = orders.filter((o) => o.status === 'pending').length;
+  const completed = orders.filter((o) => o.status === 'completed').length;
+  const completionRate = orders.length > 0 ? Math.round((completed / orders.length) * 100) : 0;
+  const demand = ai ? Object.entries(ai.demand_by_fuel_type) : [];
+  const maxDemand = Math.max(...demand.map(([, v]) => v), 1);
 
   return (
     <div>
@@ -109,17 +118,24 @@ export default function Dashboard() {
         <Card label="Active Promotions" value={promos.filter((p) => p.is_active).length} />
       </div>
 
-      <div style={{ display: 'flex', gap: 20, marginTop: 24 }}>
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, flex: 1.3, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-          <h3 style={{ marginTop: 0 }}>Revenue by Day</h3>
+      <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
+        <div style={{ ...CARD, flex: 1.6 }}>
+          <h3 style={{ marginTop: 0 }}>Revenue Trend</h3>
           {sales && Object.keys(sales.by_day).length > 0
-            ? <BarChart data={sales.by_day} />
+            ? <SmoothLine data={sales.by_day} />
             : <p style={{ color: '#999' }}>No completed sales yet</p>}
         </div>
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, flex: 1, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+        <div style={{ ...CARD, flex: 1, textAlign: 'center' }}>
+          <h3 style={{ marginTop: 0, textAlign: 'left' }}>Order Completion</h3>
+          <Donut percent={completionRate} color="#E8450A" label={`${completed} of ${orders.length}`} />
+        </div>
+      </div>
+
+      <div style={{ marginTop: 20 }}>
+        <div style={{ ...CARD }}>
           <h3 style={{ marginTop: 0 }}>Fuel Demand</h3>
-          {ai && Object.keys(ai.demand_by_fuel_type).length > 0
-            ? <PieChart data={ai.demand_by_fuel_type} />
+          {demand.length > 0
+            ? demand.map(([type, val], i) => <ProgressRow key={type} label={type} value={val} max={maxDemand} color={COLORS[i % COLORS.length]} />)
             : <p style={{ color: '#999' }}>No data yet</p>}
         </div>
       </div>
