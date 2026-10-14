@@ -20,9 +20,16 @@ export default function Register() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [ripple, setRipple] = useState(null);
   const navigate = useNavigate();
 
   function set(k) { return (e) => setForm({ ...form, [k]: e.target.value }); }
+
+  function addRipple(e) {
+    const r = e.currentTarget.getBoundingClientRect();
+    setRipple({ x: e.clientX - r.left, y: e.clientY - r.top, key: Date.now() });
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -30,7 +37,8 @@ export default function Register() {
     setLoading(true);
     try {
       await api.post('/staff/auth/register', { ...form, station_id: Number(form.station_id) });
-      navigate('/login');
+      setLeaving(true);
+      setTimeout(() => navigate('/login'), 450);
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
@@ -39,7 +47,19 @@ export default function Register() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex' }}>
+    <div style={{
+      minHeight: '100vh', display: 'flex',
+      opacity: leaving ? 0 : 1, transform: leaving ? 'scale(0.98)' : 'none',
+      transition: 'opacity .45s ease, transform .45s ease',
+    }}>
+      <style>{`
+        @keyframes pq-ripple { from { transform: scale(0); opacity: .5; } to { transform: scale(1); opacity: 0; } }
+        @keyframes pq-spin { to { transform: rotate(360deg); } }
+        @keyframes pq-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+        @keyframes pq-rise { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: none; } }
+        @keyframes pq-glow { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
+
       <div style={{
         flex: 1, position: 'relative', overflow: 'hidden', background: '#000', color: '#fff',
         display: 'flex', flexDirection: 'column', padding: '9vh 60px 0',
@@ -47,12 +67,12 @@ export default function Register() {
         {/* Orange glow behind the mascot */}
         <div style={{
           position: 'absolute', left: '50%', bottom: '-25%', transform: 'translateX(-50%)',
-          width: '130%', height: '75%', pointerEvents: 'none',
+          width: '130%', height: '75%', pointerEvents: 'none', animation: 'pq-glow 1s ease both',
           background: 'radial-gradient(circle, rgba(232,69,10,0.38), transparent 65%)',
         }} />
 
         {/* Text */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{ position: 'relative', zIndex: 1, animation: 'pq-in .6s ease both' }}>
           <h1 style={{ fontSize: 40, margin: 0, lineHeight: 1.2 }}>Pump<span style={{ color: '#E8450A' }}>Q</span></h1>
           <p style={{ color: '#aaa', fontSize: 15, marginTop: 12, maxWidth: 380 }}>
             Create your staff account to start managing fuel inventory, promotions, transactions, and station analytics.
@@ -75,13 +95,13 @@ export default function Register() {
           style={{
             position: 'relative', zIndex: 1, marginTop: 'auto', alignSelf: 'center',
             width: 'min(92%, 620px)', marginBottom: '-6%', objectFit: 'contain',
-            pointerEvents: 'none', userSelect: 'none',
+            pointerEvents: 'none', userSelect: 'none', animation: 'pq-rise .8s .15s ease both',
           }}
         />
       </div>
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', padding: '40px 0' }}>
-        <form onSubmit={handleSubmit} style={{ width: 340 }}>
+        <form onSubmit={handleSubmit} style={{ width: 340, animation: 'pq-in .5s ease both' }}>
           <h2>Create an account</h2>
           <p style={{ marginBottom: 28 }}>Register your staff account</p>
 
@@ -141,7 +161,29 @@ export default function Register() {
           </div>
 
           {error && <p style={{ color: '#D8232A', fontSize: 13, marginBottom: 8 }}>{error}</p>}
-          <button type="submit" disabled={loading} style={{ width: '100%', marginTop: 8, padding: 13 }}>
+          <button
+            type="submit"
+            disabled={loading || leaving}
+            onMouseDown={addRipple}
+            style={{
+              width: '100%', marginTop: 8, padding: 13, position: 'relative', overflow: 'hidden',
+              background: 'linear-gradient(135deg,#F5765C,#E8450A)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}
+          >
+            {ripple && (
+              <span key={ripple.key} style={{
+                position: 'absolute', left: ripple.x - 120, top: ripple.y - 120, width: 240, height: 240,
+                borderRadius: '50%', background: 'rgba(255,255,255,0.45)', pointerEvents: 'none',
+                animation: 'pq-ripple .6s ease-out forwards',
+              }} />
+            )}
+            {loading && (
+              <span style={{
+                width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: '#fff',
+                borderRadius: '50%', animation: 'pq-spin .7s linear infinite',
+              }} />
+            )}
             {loading ? 'Creating account...' : 'Register'}
           </button>
           <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13 }}>
