@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
+
+const ORANGE = '#E8450A';
 
 const GROUPS = [
   { key: 'pending', label: 'Pending', color: '#F5A623' },
@@ -7,8 +9,44 @@ const GROUPS = [
   { key: 'cancelled', label: 'Cancelled', color: '#D8232A' },
 ];
 
+const S = {
+  card: { background: '#fff', borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', border: '1px solid #F0F0F0' },
+  th: { textAlign: 'left', padding: '10px 10px', whiteSpace: 'nowrap', fontSize: 12, fontWeight: 500, color: '#999', borderBottom: '1px solid #EEE', background: 'transparent' },
+  td: { padding: '14px 10px', whiteSpace: 'nowrap', fontSize: 13, borderBottom: '1px solid #EEE', color: '#222' },
+  input: { border: '1px solid #E5E5E5', borderRadius: 10, padding: '8px 14px', fontSize: 13, background: '#fff', outline: 'none', width: 200, margin: 0 },
+  accept: {
+    background: `linear-gradient(135deg,#F5765C,${ORANGE})`, color: '#fff', border: 'none', borderRadius: 8,
+    padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', boxShadow: 'none', width: 'auto',
+  },
+  ghost: {
+    background: '#fff', color: '#444', border: '1px solid #E5E5E5', borderRadius: 8,
+    padding: '6px 14px', fontSize: 12, fontWeight: 500, cursor: 'pointer', boxShadow: 'none', width: 'auto',
+  },
+};
+
+function StatusPill({ status }) {
+  const g = GROUPS.find((x) => x.key === status);
+  const color = g ? g.color : '#888';
+  return (
+    <span style={{ background: color + '1A', color, fontSize: 11, fontWeight: 600, padding: '4px 12px', borderRadius: 999, textTransform: 'capitalize' }}>
+      {status}
+    </span>
+  );
+}
+
+function SideCard({ title, children }) {
+  return (
+    <div style={{ ...S.card, padding: 18 }}>
+      <div style={{ fontSize: 12, color: '#888', marginBottom: 8 }}>{title}</div>
+      {children}
+    </div>
+  );
+}
+
 export default function Transactions() {
   const [orders, setOrders] = useState([]);
+  const [tab, setTab] = useState('all');
+  const [search, setSearch] = useState('');
 
   async function load() {
     const res = await api.get('/staff/orders');
@@ -26,41 +64,132 @@ export default function Transactions() {
     catch (e) { alert(e.response?.data?.message || 'Failed'); }
   }
 
+  const counts = useMemo(() => {
+    const c = { all: orders.length };
+    GROUPS.forEach((g) => { c[g.key] = orders.filter((o) => o.status === g.key).length; });
+    return c;
+  }, [orders]);
+
+  const revenue = useMemo(
+    () => orders.filter((o) => o.status === 'completed').reduce((s, o) => s + Number(o.amount || 0), 0),
+    [orders]
+  );
+  const pct = counts.all ? Math.round((counts.completed / counts.all) * 100) : 0;
+
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return orders.filter((o) =>
+      (tab === 'all' || o.status === tab) &&
+      (!q || String(o.order_id).includes(q) || String(o.fuel_type).toLowerCase().includes(q))
+    );
+  }, [orders, tab, search]);
+
+  const tabs = [{ key: 'all', label: 'All' }, ...GROUPS];
+
   return (
     <div>
-      <h2>Transactions</h2>
-      <p>Orders placed at your station, grouped by status</p>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
+        <div>
+          <h2 style={{ margin: 0, fontSize: 26 }}>Transactions</h2>
+          <p style={{ margin: '4px 0 0', color: '#777', fontSize: 14 }}>Orders placed at your station, grouped by status</p>
+        </div>
+        <input style={S.input} placeholder="Search order # or fuel..." value={search} onChange={(e) => setSearch(e.target.value)} />
+      </div>
 
-      {GROUPS.map((g) => {
-        const rows = orders.filter((o) => o.status === g.key);
-        return (
-          <div className="card" key={g.key} style={{ marginTop: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <span style={{ width: 10, height: 10, borderRadius: '50%', background: g.color, display: 'inline-block' }} />
-              <h3 style={{ margin: 0 }}>{g.label}</h3>
-              <span style={{ background: g.color + '1A', color: g.color, fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 10 }}>{rows.length}</span>
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+        {/* Main table */}
+        <div style={{ ...S.card, flex: 1, padding: 20, minWidth: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 16 }}>Orders</h3>
+            <div style={{ display: 'flex', background: '#F4F4F4', borderRadius: 999, padding: 3 }}>
+              {tabs.map((t) => {
+                const active = tab === t.key;
+                return (
+                  <button key={t.key} onClick={() => setTab(t.key)} style={{
+                    background: active ? ORANGE : 'transparent', color: active ? '#fff' : '#666',
+                    border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 12, fontWeight: 600,
+                    cursor: 'pointer', boxShadow: 'none', width: 'auto',
+                  }}>
+                    {t.label} <span style={{ opacity: 0.75 }}>{counts[t.key]}</span>
+                  </button>
+                );
+              })}
             </div>
-            {rows.length === 0 ? (
-              <p style={{ fontSize: 13 }}>No {g.label.toLowerCase()} orders</p>
-            ) : (
-              <table style={{ boxShadow: 'none' }}>
-                <thead><tr><th>Order #</th><th>Fuel</th><th>Liters</th><th>Amount</th><th>Payment</th>{g.key === 'pending' && <th>Actions</th>}</tr></thead>
-                <tbody>
-                  {rows.map((o) => (
-                    <tr key={o.order_id}>
-                      <td>#{o.order_id}</td><td>{o.fuel_type}</td><td>{o.liters}</td><td>₱{o.amount}</td><td>{o.payment_status}</td>
-                      {g.key === 'pending' && (
-                        <td><button onClick={() => accept(o.order_id)}>Accept</button>{' '}
-                          <button onClick={() => cancel(o.order_id)} style={{ background: '#f0f0f0', color: '#444', boxShadow: 'none' }}>Cancel</button></td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
           </div>
-        );
-      })}
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', boxShadow: 'none', background: 'transparent' }}>
+              <thead>
+                <tr>
+                  <th style={S.th}>Order #</th>
+                  <th style={S.th}>Fuel</th>
+                  <th style={S.th}>Liters</th>
+                  <th style={S.th}>Amount</th>
+                  <th style={S.th}>Payment</th>
+                  <th style={S.th}>Status</th>
+                  <th style={{ ...S.th, textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((o) => (
+                  <tr key={o.order_id}>
+                    <td style={{ ...S.td, fontWeight: 600 }}>#{o.order_id}</td>
+                    <td style={S.td}>{o.fuel_type}</td>
+                    <td style={S.td}>{o.liters}</td>
+                    <td style={{ ...S.td, fontWeight: 600 }}>₱{o.amount}</td>
+                    <td style={{ ...S.td, textTransform: 'capitalize' }}>{o.payment_status}</td>
+                    <td style={S.td}><StatusPill status={o.status} /></td>
+                    <td style={{ ...S.td, textAlign: 'right' }}>
+                      {o.status === 'pending' ? (
+                        <div style={{ display: 'inline-flex', gap: 8 }}>
+                          <button style={S.accept} onClick={() => accept(o.order_id)}>Accept</button>
+                          <button style={S.ghost} onClick={() => cancel(o.order_id)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <span style={{ color: '#CCC' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {rows.length === 0 && (
+                  <tr><td colSpan={7} style={{ ...S.td, textAlign: 'center', color: '#999', padding: 40, borderBottom: 'none' }}>No orders found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ paddingTop: 14, fontSize: 12, color: '#888' }}>Showing {rows.length} of {counts.all}</div>
+        </div>
+
+        {/* Summary column */}
+        <div style={{ width: 250, display: 'flex', flexDirection: 'column', gap: 16, flexShrink: 0 }}>
+          <SideCard title="Order completion">
+            <div style={{ height: 8, borderRadius: 999, background: '#F0F0F0', overflow: 'hidden' }}>
+              <div style={{ width: `${pct}%`, height: '100%', background: `linear-gradient(90deg,#F5765C,${ORANGE})` }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 12 }}>
+              <span style={{ color: '#888' }}>{counts.completed} of {counts.all} completed</span>
+              <span style={{ fontWeight: 600 }}>{pct}%</span>
+            </div>
+          </SideCard>
+
+          <SideCard title="Completed revenue">
+            <div style={{ fontSize: 26, fontWeight: 700, color: ORANGE }}>₱{revenue.toLocaleString()}</div>
+          </SideCard>
+
+          <SideCard title="By status">
+            {GROUPS.map((g) => (
+              <div key={g.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: g.key !== 'cancelled' ? '1px solid #F2F2F2' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: g.color }} />
+                  {g.label}
+                </div>
+                <span style={{ background: g.color + '1A', color: g.color, fontSize: 11, fontWeight: 600, padding: '2px 10px', borderRadius: 10 }}>{counts[g.key]}</span>
+              </div>
+            ))}
+          </SideCard>
+        </div>
+      </div>
     </div>
   );
 }
