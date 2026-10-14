@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 
-const COLORS = ['#E8450A', '#1A1A1A', '#B8340A', '#F5765C', '#6B7280'];const CARD = { background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' };
+const COLORS = ['#E8450A', '#1A1A1A', '#B8340A', '#F5765C', '#6B7280'];
+const CARD = { background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' };
 const GRADIENTS = [
   'linear-gradient(135deg,#F5765C,#E8450A)',
   'linear-gradient(135deg,#B8340A,#1A1A1A)',
@@ -118,7 +120,10 @@ export default function Dashboard() {
           {sales && Object.keys(sales.by_day).length > 0 ? <SmoothLine data={sales.by_day} /> : <p style={{ color: '#999' }}>No completed sales yet</p>}
         </div>
         <div style={{ ...CARD, flex: 1, textAlign: 'center' }}>
-          <h3 style={{ marginTop: 0, textAlign: 'left' }}>Order Completion</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, textAlign: 'left' }}>
+            <h3 style={{ margin: 0 }}>Order Completion</h3>
+            <Link to="/transactions" style={{ fontSize: 12, fontWeight: 600 }}>See all orders →</Link>
+          </div>
           <Donut percent={completionRate} color="#E8450A" label={`${completed} of ${orders.length}`} />
         </div>
       </div>
@@ -131,7 +136,10 @@ export default function Dashboard() {
             : <p style={{ color: '#999' }}>No data yet</p>}
         </div>
         <div style={{ ...CARD, flex: 1.6 }}>
-          <h3 style={{ marginTop: 0 }}>Recent Orders</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h3 style={{ margin: 0 }}>Recent Orders</h3>
+            <Link to="/transactions" style={{ fontSize: 12, fontWeight: 600 }}>Manage orders →</Link>
+          </div>
           <table style={{ boxShadow: 'none' }}>
             <thead><tr><th>Order #</th><th>Fuel</th><th>Amount</th><th>Status</th></tr></thead>
             <tbody>
