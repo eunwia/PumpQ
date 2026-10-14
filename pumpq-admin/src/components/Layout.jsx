@@ -4,14 +4,14 @@ import { IconHome, IconUser, IconFuel, IconMap, IconTag, IconReceipt, IconBell, 
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', Icon: IconHome },
-  { to: '/account', label: 'My Account', Icon: IconUser },
+  { to: '/scan', label: 'Scan QR', Icon: IconFuel },
+  { to: '/transactions', label: 'Orders', Icon: IconReceipt },
   { to: '/products', label: 'Products', Icon: IconFuel },
-  { to: '/station-services', label: 'Station Services', Icon: IconMap },
   { to: '/promotions', label: 'Promotions', Icon: IconTag },
-  { to: '/transactions', label: 'Transactions', Icon: IconReceipt },
+  { to: '/station-services', label: 'Station Services', Icon: IconMap },
   { to: '/notifications', label: 'Notifications', Icon: IconBell },
   { to: '/reports', label: 'Reports', Icon: IconChart },
-  { to: '/scan', label: 'Scan QR', Icon: IconFuel },
+  { to: '/account', label: 'My Account', Icon: IconUser },
 ];
 
 export default function Layout() {
