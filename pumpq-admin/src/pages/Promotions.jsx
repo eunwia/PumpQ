@@ -10,12 +10,25 @@ export default function Promotions() {
 
   async function handleAdd(e) {
     e.preventDefault();
+    if (!form.promo_name || !form.coupon_code) return;
+    if (!confirm(`Create promotion "${form.promo_name}" with code "${form.coupon_code}"?`)) return;
     await api.post('/staff/promotions', { ...form, discount_value: Number(form.discount_value) });
     setForm({ promo_name: '', promo_type: 'flat', discount_value: '', promo_tag: '', coupon_code: '', expires_at: '' });
     load();
   }
-  async function toggleActive(p) { await api.put(`/staff/promotions/${p.promo_id}`, { is_active: !p.is_active }); load(); }
-  async function handleDelete(id) { if (!confirm('Delete?')) return; await api.delete(`/staff/promotions/${id}`); load(); }
+
+  async function toggleActive(p) {
+    const nextLabel = p.is_active ? 'inactive' : 'active';
+    if (!confirm(`Do you wish to make "${p.promo_name}" ${nextLabel}?`)) return;
+    await api.put(`/staff/promotions/${p.promo_id}`, { is_active: !p.is_active });
+    load();
+  }
+
+  async function handleDelete(p) {
+    if (!confirm(`Delete promotion "${p.promo_name}" (${p.coupon_code})? This cannot be undone.`)) return;
+    await api.delete(`/staff/promotions/${p.promo_id}`);
+    load();
+  }
 
   return (
     <div>
@@ -46,9 +59,13 @@ export default function Promotions() {
               <tr key={p.promo_id}>
                 <td>{p.promo_name}</td><td>{p.promo_type}</td><td>{p.discount_value}</td>
                 <td><span style={{ background: '#FFF0EA', color: '#E8450A', padding: '3px 10px', borderRadius: 8, fontWeight: 600, fontSize: 12 }}>{p.coupon_code}</span></td>
-                <td><span style={{ color: p.is_active ? '#2E7D32' : '#999', fontWeight: 600 }}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td><button onClick={() => toggleActive(p)} style={{ background: '#f0f0f0', color: '#444', boxShadow: 'none' }}>Toggle</button>{' '}
-                  <button onClick={() => handleDelete(p.promo_id)}>Delete</button></td>
+                <td><span style={{ color: p.is_active ? '#1A1A1A' : '#999', fontWeight: 600 }}>{p.is_active ? 'Active' : 'Inactive'}</span></td>
+                <td>
+                  <button onClick={() => toggleActive(p)} style={{ background: '#f0f0f0', color: '#444', boxShadow: 'none' }}>
+                    {p.is_active ? 'Make Inactive' : 'Make Active'}
+                  </button>{' '}
+                  <button onClick={() => handleDelete(p)}>Delete</button>
+                </td>
               </tr>
             ))}
           </tbody>
