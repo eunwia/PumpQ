@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { IconFuel } from '../components/Icons';
+import mascot from '../../images/piq-dashboard.png';
 
 const COLORS = ['#E8450A', '#1A1A1A', '#B8340A', '#F5765C', '#6B7280'];
 const CARD = { background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' };

@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { IconHome, IconUser, IconFuel, IconMap, IconTag, IconReceipt, IconBell, IconChart, IconLogout } from './Icons';
+import navLogo from '../../images/pumpq-nav-logo.png';
 
 const LINKS = [
   { to: '/dashboard', label: 'Dashboard', Icon: IconHome },
@@ -26,7 +27,7 @@ export default function Layout() {
         height: '100vh', position: 'sticky', top: 0, flexShrink: 0,
       }}>
         <div style={{ marginBottom: 32, paddingLeft: 6 }}>
-          <h2 style={{ fontSize: 19, margin: 0, color: '#fff' }}>Pump<span style={{ color: '#E8450A' }}>Q</span></h2>
+          <img src={navLogo} alt="PumpQ" draggable={false} style={{ height: 26, display: 'block', objectFit: 'contain' }} />
           <p style={{ fontSize: 11, color: '#888', marginTop: 2 }}>Staff Portal</p>
         </div>
         <nav style={{ flex: 1, overflowY: 'auto' }}>
