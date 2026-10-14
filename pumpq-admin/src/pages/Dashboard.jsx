@@ -68,9 +68,9 @@ function ProgressRow({ label, value, max, color }) {
 
 function GradientCard({ label, value, gradient }) {
   return (
-    <div style={{ background: gradient, borderRadius: 18, padding: 20, flex: 1, color: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
-      <p style={{ margin: 0, fontSize: 11, opacity: 0.85, textTransform: 'uppercase' }}>{label}</p>
-      <p style={{ margin: '8px 0 0', fontSize: 24, fontWeight: 700 }}>{value}</p>
+    <div style={{ background: gradient, borderRadius: 18, padding: 20, flex: 1, boxShadow: '0 4px 14px rgba(0,0,0,0.12)' }}>
+      <p style={{ margin: 0, fontSize: 11, opacity: 0.85, textTransform: 'uppercase', color: '#fff' }}>{label}</p>
+      <p style={{ margin: '8px 0 0', fontSize: 24, fontWeight: 700, color: '#fff' }}>{value}</p>
     </div>
   );
 }
