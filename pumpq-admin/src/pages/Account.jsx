@@ -14,24 +14,38 @@ export default function Account() {
     try {
       const res = await api.put('/staff/auth/me', { first_name: firstName, last_name: lastName, contact_number: contact });
       setStaff(res.data.data.staff);
-      setMsg('Saved!');
-    } catch {
-      setMsg('Update failed');
-    }
+      setMsg('Saved successfully');
+    } catch { setMsg('Update failed'); }
   }
 
   return (
-    <div style={{ maxWidth: 400 }}>
+    <div>
       <h2>My Account</h2>
-      <p>Email: {staff?.email}</p>
-      <p>Role: {staff?.role}</p>
-      <form onSubmit={handleSave}>
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-        <input value={contact} onChange={(e) => setContact(e.target.value)} placeholder="Contact number" style={{ width: '100%', padding: 8, marginBottom: 8 }} />
-        {msg && <p>{msg}</p>}
-        <button type="submit">Save</button>
-      </form>
+      <p>Manage your staff profile information</p>
+
+      <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
+        <div className="card" style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'linear-gradient(135deg,#F5765C,#E8450A)', margin: '0 auto 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 26, fontWeight: 700 }}>
+            {staff?.first_name?.[0]?.toUpperCase()}
+          </div>
+          <p style={{ color: '#1A1A1A', fontWeight: 600 }}>{staff?.first_name} {staff?.last_name}</p>
+          <p style={{ fontSize: 13 }}>{staff?.email}</p>
+          <p style={{ fontSize: 12, marginTop: 6 }}>Role: <strong style={{ color: '#E8450A' }}>{staff?.role}</strong></p>
+        </div>
+        <div className="card" style={{ flex: 1.5 }}>
+          <h3>Edit Details</h3>
+          <form onSubmit={handleSave}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444' }}>First name</label>
+            <input value={firstName} onChange={(e) => setFirstName(e.target.value)} style={{ width: '100%', marginTop: 6, marginBottom: 14 }} />
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444' }}>Last name</label>
+            <input value={lastName} onChange={(e) => setLastName(e.target.value)} style={{ width: '100%', marginTop: 6, marginBottom: 14 }} />
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444' }}>Contact number</label>
+            <input value={contact} onChange={(e) => setContact(e.target.value)} style={{ width: '100%', marginTop: 6, marginBottom: 14 }} />
+            <button type="submit">Save Changes</button>
+            {msg && <p style={{ marginTop: 10, color: '#2E7D32', fontSize: 13 }}>{msg}</p>}
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
