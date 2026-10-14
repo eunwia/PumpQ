@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { IconFuel } from '../components/Icons';
 
 const COLORS = ['#E8450A', '#1A1A1A', '#B8340A', '#F5765C', '#6B7280'];
 const CARD = { background: '#fff', borderRadius: 18, padding: 22, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' };
@@ -113,6 +114,18 @@ export default function Dashboard() {
       <div style={{ display: 'flex', gap: 16, marginTop: 20 }}>
         {stats.map((s, i) => <GradientCard key={s.label} {...s} gradient={GRADIENTS[i]} />)}
       </div>
+
+      <Link to="/scan" style={{ textDecoration: 'none' }}>
+        <div style={{ ...CARD, marginTop: 20, display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer' }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg,#F5765C,#E8450A)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <IconFuel />
+          </div>
+          <div>
+            <h3 style={{ margin: 0 }}>Scan Customer QR</h3>
+            <p style={{ margin: '2px 0 0', fontSize: 13 }}>Confirm a pending order instantly by scanning their Express QR code</p>
+          </div>
+        </div>
+      </Link>
 
       <div style={{ display: 'flex', gap: 20, marginTop: 20 }}>
         <div style={{ ...CARD, flex: 1.6 }}>
