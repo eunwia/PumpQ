@@ -43,10 +43,38 @@ function SideCard({ title, children }) {
   );
 }
 
+function SortIcon({ dir }) {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" style={{ marginLeft: 6, flexShrink: 0 }}>
+      <path d="M5 1 L9 5 H1 Z" fill={dir === 'asc' ? ORANGE : '#CCC'} />
+      <path d="M5 13 L1 9 H9 Z" fill={dir === 'desc' ? ORANGE : '#CCC'} />
+    </svg>
+  );
+}
+
+function SortTh({ label, field, sort, onSort }) {
+  return (
+    <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' }} onClick={() => onSort(field)}>
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {label}<SortIcon dir={sort.key === field ? sort.dir : null} />
+      </span>
+    </th>
+  );
+}
+
 export default function Transactions() {
   const [orders, setOrders] = useState([]);
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState({ key: null, dir: null });
+
+  function toggleSort(key) {
+    setSort((s) => {
+      if (s.key !== key) return { key, dir: 'asc' };
+      if (s.dir === 'asc') return { key, dir: 'desc' };
+      return { key: null, dir: null };
+    });
+  }
 
   async function load() {
     const res = await api.get('/staff/orders');
@@ -78,11 +106,17 @@ export default function Transactions() {
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return orders.filter((o) =>
+    const filtered = orders.filter((o) =>
       (tab === 'all' || o.status === tab) &&
       (!q || String(o.order_id).includes(q) || String(o.fuel_type).toLowerCase().includes(q))
     );
-  }, [orders, tab, search]);
+    if (!sort.key) return filtered;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sort.key === 'fuel_type') return dir * String(a.fuel_type).localeCompare(String(b.fuel_type));
+      return dir * (Number(a[sort.key]) - Number(b[sort.key]));
+    });
+  }, [orders, tab, search, sort]);
 
   const tabs = [{ key: 'all', label: 'All' }, ...GROUPS];
 
@@ -122,10 +156,10 @@ export default function Transactions() {
             <table style={{ width: '100%', borderCollapse: 'collapse', boxShadow: 'none', background: 'transparent' }}>
               <thead>
                 <tr>
-                  <th style={S.th}>Order #</th>
-                  <th style={S.th}>Fuel</th>
-                  <th style={S.th}>Liters</th>
-                  <th style={S.th}>Amount</th>
+                  <SortTh label="Order #" field="order_id" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Fuel" field="fuel_type" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Liters" field="liters" sort={sort} onSort={toggleSort} />
+                  <SortTh label="Amount" field="amount" sort={sort} onSort={toggleSort} />
                   <th style={S.th}>Payment</th>
                   <th style={S.th}>Status</th>
                   <th style={{ ...S.th, textAlign: 'right' }}>Actions</th>
