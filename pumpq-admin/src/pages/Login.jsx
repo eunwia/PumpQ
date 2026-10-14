@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import mascot from '../../images/piq-register.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,14 +19,45 @@ export default function Login() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex' }}>
       <div style={{
-        flex: 1, background: 'linear-gradient(145deg,#1A1A1A,#2A1A12)', color: '#fff',
-        display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 60px',
+        flex: 1, position: 'relative', overflow: 'hidden', background: '#000', color: '#fff',
+        display: 'flex', flexDirection: 'column', padding: '9vh 60px 0',
       }}>
-        <h1 style={{ fontSize: 40, margin: 0, lineHeight: 1.2 }}>Pump<span style={{ color: '#E8450A' }}>Q</span></h1>
-        <p style={{ color: '#aaa', fontSize: 15, marginTop: 12, maxWidth: 360 }}>
-          The staff portal for managing fuel inventory, promotions, transactions, and station analytics.
-        </p>
+        {/* Orange glow behind the mascot */}
+        <div style={{
+          position: 'absolute', left: '50%', bottom: '-25%', transform: 'translateX(-50%)',
+          width: '130%', height: '75%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(232,69,10,0.38), transparent 65%)',
+        }} />
+
+        {/* Text */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <h1 style={{ fontSize: 40, margin: 0, lineHeight: 1.2 }}>Pump<span style={{ color: '#E8450A' }}>Q</span></h1>
+          <p style={{ color: '#aaa', fontSize: 15, marginTop: 12, maxWidth: 380 }}>
+            The staff portal for managing fuel inventory, promotions, transactions, and station analytics.
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 20 }}>
+            {['Fuel inventory', 'Promotions', 'Transactions', 'Analytics'].map((t) => (
+              <span key={t} style={{
+                fontSize: 12, color: '#ccc', padding: '6px 14px', borderRadius: 999,
+                border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)',
+              }}>{t}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Mascot, centered and cropped at the bottom */}
+        <img
+          src={mascot}
+          alt="PumpQ mascot"
+          draggable={false}
+          style={{
+            position: 'relative', zIndex: 1, marginTop: 'auto', alignSelf: 'center',
+            width: 'min(92%, 620px)', marginBottom: '-6%', objectFit: 'contain',
+            pointerEvents: 'none', userSelect: 'none',
+          }}
+        />
       </div>
+
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <form onSubmit={handleSubmit} style={{ width: 340 }}>
           <h2>Welcome back</h2>
