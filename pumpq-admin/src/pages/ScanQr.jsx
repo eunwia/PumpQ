@@ -97,87 +97,86 @@ export default function ScanQr() {
       <h2>Scan QR to Confirm Order</h2>
       <p>Point the camera at the customer's PumpQ Express QR code</p>
 
-      <div style={{ display: 'flex', gap: 20, marginTop: 20, alignItems: 'flex-start' }}>
-        {/* Camera */}
-        <div style={{ ...S.card, flex: 1.6, minWidth: 0 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h3 style={{ margin: 0 }}>Camera</h3>
-              <span style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
-                padding: '3px 10px', borderRadius: 999,
-                background: scanning ? '#E6F6EC' : '#F0F0F0', color: scanning ? '#1E8E4E' : '#888',
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: scanning ? '#1E8E4E' : '#AAA' }} />
-                {scanning ? 'On' : 'Off'}
-              </span>
-            </div>
-            {scanning ? (
-              <button onClick={stopCamera} style={S.ghost}>Close Camera</button>
-            ) : (
-              <button onClick={startScan} style={{ padding: '9px 16px', width: 'auto' }}>Open Camera</button>
-            )}
+      {/* Camera (full width) */}
+      <div style={{ ...S.card, marginTop: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <h3 style={{ margin: 0 }}>Camera</h3>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600,
+              padding: '3px 10px', borderRadius: 999,
+              background: scanning ? '#E6F6EC' : '#F0F0F0', color: scanning ? '#1E8E4E' : '#888',
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: scanning ? '#1E8E4E' : '#AAA' }} />
+              {scanning ? 'On' : 'Off'}
+            </span>
           </div>
-
-          <div style={{ position: 'relative', aspectRatio: '16 / 9', borderRadius: 14, overflow: 'hidden', background: '#111' }}>
-            <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
-            {!scanning && (
-              <div style={{
-                position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center', gap: 8, background: '#111', color: '#888', fontSize: 13,
-              }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" />
-                  <line x1="2" y1="2" x2="22" y2="22" />
-                </svg>
-                Camera is off
-              </div>
-            )}
-          </div>
+          {scanning ? (
+            <button onClick={stopCamera} style={S.ghost}>Close Camera</button>
+          ) : (
+            <button onClick={startScan} style={{ padding: '9px 16px', width: 'auto' }}>Open Camera</button>
+          )}
         </div>
 
-        {/* Side column */}
-        <div style={{ width: 320, display: 'flex', flexDirection: 'column', gap: 16, flexShrink: 0 }}>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <div style={{ ...S.card, flex: 1, padding: 16 }}>
-              <div style={S.label}>Confirmed</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#1A1A1A', marginTop: 6 }}>{stats.confirmed}</div>
+        <div style={{
+          position: 'relative', width: '100%', height: 'calc(100vh - 400px)', minHeight: 300,
+          borderRadius: 14, overflow: 'hidden', background: '#111',
+        }}>
+          <div id="qr-reader" style={{ width: '100%', height: '100%' }} />
+          {!scanning && (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 8, background: '#111', color: '#888', fontSize: 13,
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" />
+                <line x1="2" y1="2" x2="22" y2="22" />
+              </svg>
+              Camera is off
             </div>
-            <div style={{ ...S.card, flex: 1, padding: 16 }}>
-              <div style={S.label}>Failed</div>
-              <div style={{ fontSize: 28, fontWeight: 700, color: '#B8340A', marginTop: 6 }}>{stats.failed}</div>
-            </div>
-          </div>
+          )}
+        </div>
+      </div>
 
-          <div style={S.card}>
-            <h3>Manual Entry</h3>
-            <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
-              <input placeholder="Paste QR code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
-              <button type="submit" style={{ background: '#1A1A1A' }}>Confirm</button>
-            </form>
-          </div>
+      {/* Containers below the camera */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr 2fr', gap: 16, marginTop: 16, alignItems: 'stretch' }}>
+        <div style={{ ...S.card, padding: 16 }}>
+          <div style={S.label}>Confirmed</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#1A1A1A', marginTop: 6 }}>{stats.confirmed}</div>
+        </div>
 
-          <div style={S.card}>
-            <h3>Scan Result</h3>
-            {!result && <p style={{ fontSize: 13 }}>{scanning ? 'Waiting for a QR code...' : 'No scan yet. Open the camera or paste a code.'}</p>}
-            {result && (
-              <>
-                {result.ok ? (
-                  <>
-                    <div style={{ color: '#1E8E4E', fontWeight: 700, fontSize: 15 }}>Order Confirmed ✓</div>
-                    <div style={{ marginTop: 10, fontSize: 13, color: '#444', lineHeight: 1.8 }}>
-                      <div>Order <strong>#{result.data.order_id}</strong></div>
-                      <div>{result.data.fuel_type} · {result.data.liters} L</div>
-                      <div style={{ color: ORANGE, fontWeight: 700 }}>₱{result.data.amount}</div>
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ color: '#B8340A', fontSize: 13, fontWeight: 600 }}>{result.msg}</div>
-                )}
-                <button onClick={scanAgain} style={{ marginTop: 14, width: '100%' }}>Scan Another</button>
-              </>
-            )}
-          </div>
+        <div style={{ ...S.card, padding: 16 }}>
+          <div style={S.label}>Failed</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#B8340A', marginTop: 6 }}>{stats.failed}</div>
+        </div>
+
+        <div style={S.card}>
+          <h3>Manual Entry</h3>
+          <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
+            <input placeholder="Paste QR code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+            <button type="submit" style={{ background: '#1A1A1A' }}>Confirm</button>
+          </form>
+        </div>
+
+        <div style={S.card}>
+          <h3>Scan Result</h3>
+          {!result && <p style={{ fontSize: 13 }}>{scanning ? 'Waiting for a QR code...' : 'No scan yet. Open the camera or paste a code.'}</p>}
+          {result && (
+            <>
+              {result.ok ? (
+                <>
+                  <div style={{ color: '#1E8E4E', fontWeight: 700, fontSize: 15 }}>Order Confirmed ✓</div>
+                  <div style={{ marginTop: 8, fontSize: 13, color: '#444', lineHeight: 1.7 }}>
+                    Order <strong>#{result.data.order_id}</strong> · {result.data.fuel_type} · {result.data.liters} L ·{' '}
+                    <span style={{ color: ORANGE, fontWeight: 700 }}>₱{result.data.amount}</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ color: '#B8340A', fontSize: 13, fontWeight: 600 }}>{result.msg}</div>
+              )}
+              <button onClick={scanAgain} style={{ marginTop: 12, width: '100%' }}>Scan Another</button>
+            </>
+          )}
         </div>
       </div>
     </div>
