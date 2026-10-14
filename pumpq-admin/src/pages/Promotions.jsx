@@ -33,7 +33,6 @@ export default function Promotions() {
   return (
     <div>
       <h2>Promotions</h2>
-      <p>Create and manage discount coupons for your station</p>
 
       <div className="card" style={{ marginTop: 20 }}>
         <h3>New Promotion</h3>

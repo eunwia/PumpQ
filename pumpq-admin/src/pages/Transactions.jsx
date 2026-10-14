@@ -126,7 +126,6 @@ export default function Transactions() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 26 }}>Transactions</h2>
-          <p style={{ margin: '4px 0 0', color: '#777', fontSize: 14 }}>Orders placed at your station, grouped by status</p>
         </div>
         <input style={S.input} placeholder="Search order # or fuel..." value={search} onChange={(e) => setSearch(e.target.value)} />
       </div>

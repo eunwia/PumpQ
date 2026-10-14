@@ -17,7 +17,6 @@ export default function StationServices() {
   return (
     <div>
       <h2>Station Services</h2>
-      <p>Your station's location and a live price comparison across all partners</p>
 
       {myStation && (
         <div className="card" style={{ marginTop: 20, padding: 0, overflow: 'hidden' }}>

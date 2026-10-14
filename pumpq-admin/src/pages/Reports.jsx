@@ -23,8 +23,6 @@ export default function Reports() {
   return (
     <div>
       <h2>Reports & Analytics</h2>
-      <p>Sales performance and demand insights for your station</p>
-
       {sales && (
         <div style={{ display: 'flex', gap: 16, marginTop: 20 }}>
           <div className="card" style={{ flex: 1 }}>

@@ -42,7 +42,6 @@ export default function Account() {
   return (
     <div>
       <h2>My Account</h2>
-      <p>Manage your staff profile information</p>
 
       {/* Profile banner */}
       <div className="card" style={{ marginTop: 20, padding: 0, overflow: 'hidden' }}>

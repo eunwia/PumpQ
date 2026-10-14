@@ -139,7 +139,6 @@ export default function Products() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 26 }}>Products</h2>
-          <p style={{ margin: '4px 0 0', color: '#777', fontSize: 14 }}>Manage the fuel types and prices offered at your station</p>
         </div>
         <button onClick={() => setShowForm((v) => !v)} style={S.primaryBtn}>
           {showForm ? '✕ Close' : '+ Add Fuel Type'}
