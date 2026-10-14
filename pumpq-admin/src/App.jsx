@@ -11,6 +11,7 @@ import Transactions from './pages/Transactions';
 import Notifications from './pages/Notifications';
 import Reports from './pages/Reports';
 import Dashboard from './pages/Dashboard';
+import ScanQr from './pages/ScanQr';
 
 function PrivateRoute({ children }) {
   const { staff } = useAuth();
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/notifications" element={<Notifications />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/scan" element={<ScanQr />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>

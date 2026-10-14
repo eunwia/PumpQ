@@ -11,6 +11,7 @@ const LINKS = [
   { to: '/transactions', label: 'Transactions', Icon: IconReceipt },
   { to: '/notifications', label: 'Notifications', Icon: IconBell },
   { to: '/reports', label: 'Reports', Icon: IconChart },
+  { to: '/scan', label: 'Scan QR', Icon: IconFuel },
 ];
 
 export default function Layout() {

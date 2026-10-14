@@ -37,14 +37,41 @@ function StatCard({ label, value, tint, color }) {
   );
 }
 
+function SortIcon({ dir }) {
+  return (
+    <svg width="10" height="14" viewBox="0 0 10 14" style={{ marginLeft: 6, flexShrink: 0 }}>
+      <path d="M5 1 L9 5 H1 Z" fill={dir === 'asc' ? ORANGE : '#CCC'} />
+      <path d="M5 13 L1 9 H9 Z" fill={dir === 'desc' ? ORANGE : '#CCC'} />
+    </svg>
+  );
+}
+
+function SortTh({ label, field, sort, onSort }) {
+  return (
+    <th style={{ ...S.th, cursor: 'pointer', userSelect: 'none' }} onClick={() => onSort(field)}>
+      <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+        {label}<SortIcon dir={sort.key === field ? sort.dir : null} />
+      </span>
+    </th>
+  );
+}
+
 export default function Products() {
   const [postings, setPostings] = useState([]);
   const [form, setForm] = useState({ fuel_type: '', price: '' });
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
-  const [sortDir, setSortDir] = useState(null); // null | 'asc' | 'desc'
+  const [sort, setSort] = useState({ key: null, dir: null });
   const [hoverId, setHoverId] = useState(null);
+
+  function toggleSort(key) {
+    setSort((s) => {
+      if (s.key !== key) return { key, dir: 'asc' };
+      if (s.dir === 'asc') return { key, dir: 'desc' };
+      return { key: null, dir: null };
+    });
+  }
 
   async function load() { const r = await api.get('/staff/fuel'); setPostings(r.data.data.postings); }
   useEffect(() => { load(); }, []);
@@ -87,13 +114,18 @@ export default function Products() {
   }, [postings]);
 
   const rows = useMemo(() => {
-    let r = postings.filter((p) =>
+    const r = postings.filter((p) =>
       (filter === 'all' || (filter === 'available' ? p.availability : !p.availability)) &&
       p.fuel_type.toLowerCase().includes(search.toLowerCase())
     );
-    if (sortDir) r = [...r].sort((a, b) => (sortDir === 'asc' ? a.price - b.price : b.price - a.price));
-    return r;
-  }, [postings, filter, search, sortDir]);
+    if (!sort.key) return r;
+    const dir = sort.dir === 'asc' ? 1 : -1;
+    return [...r].sort((a, b) =>
+      sort.key === 'fuel_type'
+        ? dir * String(a.fuel_type).localeCompare(String(b.fuel_type))
+        : dir * (Number(a.price) - Number(b.price))
+    );
+  }, [postings, filter, search, sort]);
 
   const tabs = [
     { key: 'all', label: `All Products (${stats.total})` },
@@ -151,8 +183,8 @@ export default function Products() {
           <input style={{ ...S.input, width: 200 }} placeholder="Search fuel type..." value={search}
             onChange={(e) => setSearch(e.target.value)} />
           <button style={{ ...S.ghostBtn, padding: '8px 14px' }}
-            onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}>
-            Sort by price {sortDir === 'asc' ? '↑' : sortDir === 'desc' ? '↓' : '↕'}
+            onClick={() => toggleSort('price')}>
+            Sort by price {sort.key === 'price' ? (sort.dir === 'asc' ? '↑' : '↓') : '↕'}
           </button>
         </div>
       </div>
@@ -162,8 +194,8 @@ export default function Products() {
         <table style={{ width: '100%', borderCollapse: 'collapse', boxShadow: 'none' }}>
           <thead>
             <tr>
-              <th style={S.th}>Fuel Type</th>
-              <th style={S.th}>Price / L</th>
+              <SortTh label="Fuel Type" field="fuel_type" sort={sort} onSort={toggleSort} />
+              <SortTh label="Price / L" field="price" sort={sort} onSort={toggleSort} />
               <th style={S.th}>Status</th>
               <th style={{ ...S.th, textAlign: 'right' }}>Actions</th>
             </tr>
