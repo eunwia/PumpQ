@@ -26,6 +26,12 @@ class OrderRepository {
         .map((e) => OrderModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
+
+  Future<OrderModel> getOrder(int orderId) async {
+    final response = await _api.client.get('/orders/$orderId');
+    final data = response.data['data']['order'] as Map<String, dynamic>;
+    return OrderModel.fromJson(data);
+  }
   Future<OrderModel> cancelOrder(int orderId) async {
     final response = await _api.client.put('/orders/$orderId/cancel');
     final data = response.data['data']['order'] as Map<String, dynamic>;

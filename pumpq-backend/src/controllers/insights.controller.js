@@ -1,9 +1,30 @@
 const supabase = require('../config/supabase');
+const admin = require('../config/firebaseAdmin');
 
 const ok = (res, status, data, message) =>
   res.status(status).json({ success: true, data, message });
 const fail = (res, status, message) =>
   res.status(status).json({ success: false, data: null, message });
+
+async function sendRefuelReminderNotification(userId, daysUntil) {
+  try {
+    const { data: user } = await supabase.from('user').select('fcm_token').eq('user_id', userId).maybeSingle();
+    if (user?.fcm_token) {
+      const body = daysUntil <= 0
+        ? "You're due for a refuel today based on your usual driving habits!"
+        : `Refuel reminder: You're expected to need a refuel in ${daysUntil} day(s).`;
+      await admin.messaging().send({
+        token: user.fcm_token,
+        notification: {
+          title: '⛽ Refuel Reminder',
+          body,
+        },
+      });
+    }
+  } catch (err) {
+    console.error('Refuel reminder push error:', err.message);
+  }
+}
 
 async function getBudget(req, res) {
   try {
@@ -113,6 +134,10 @@ async function getReminder(req, res) {
     const lastRefuel = dates[dates.length - 1];
     const predictedNext = new Date(lastRefuel.getTime() + avgInterval * 24 * 60 * 60 * 1000);
     const daysUntil = Math.ceil((predictedNext - new Date()) / (1000 * 60 * 60 * 24));
+
+    if (daysUntil <= 1) {
+      sendRefuelReminderNotification(req.userId, daysUntil).catch(() => {});
+    }
 
     return ok(
       res,

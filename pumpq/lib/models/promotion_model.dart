@@ -29,9 +29,11 @@ class PromotionModel {
       promoName: json['promo_name'] as String,
       promoType: json['promo_type'] as String,
       discountValue: (json['discount_value'] as num).toDouble(),
-      promoTag: json['promo_tag'] as String,
+      promoTag: json['promo_tag'] as String? ?? '',
       couponCode: json['coupon_code'] as String,
-      expiresAt: DateTime.parse(json['expires_at'] as String),
+      expiresAt: json['expires_at'] != null
+          ? DateTime.parse(json['expires_at'] as String)
+          : DateTime.now().add(const Duration(days: 365)),
     );
   }
 

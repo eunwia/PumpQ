@@ -9,7 +9,7 @@ final promotionRepositoryProvider = Provider<PromotionRepository>((ref) {
   return PromotionRepository(ref.watch(apiServiceProvider));
 });
 
-final promotionsProvider = FutureProvider<List<PromotionModel>>((ref) {
+final promotionsProvider = FutureProvider.autoDispose<List<PromotionModel>>((ref) {
   return ref.watch(promotionRepositoryProvider).getPromotions();
 });
 

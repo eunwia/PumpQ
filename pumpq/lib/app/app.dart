@@ -5,6 +5,10 @@ import 'package:pumpq/core/constants/app_strings.dart';
 import 'package:pumpq/core/services/text_scale_provider.dart';
 import 'package:pumpq/core/theme/app_theme.dart';
 
+/// Global key so that NotificationService can show a SnackBar even when
+/// there is no local BuildContext (e.g. foreground FCM message).
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 class PumpQApp extends ConsumerWidget {
   const PumpQApp({super.key});
 
@@ -17,6 +21,7 @@ class PumpQApp extends ConsumerWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      scaffoldMessengerKey: scaffoldMessengerKey,
       routerConfig: router,
       builder: (context, child) {
         return MediaQuery(

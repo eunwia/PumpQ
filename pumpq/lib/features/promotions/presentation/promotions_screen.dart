@@ -33,42 +33,52 @@ class _PromotionsScreenState extends ConsumerState<PromotionsScreen> {
             return p.promoType == 'flat';
           }).toList();
 
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                child: SizedBox(
-                  height: 36,
-                  child: ListView(
-                    scrollDirection: Axis.horizontal,
-                    children: ['All', '₱ Off', '% Off', 'Site-wide'].map((f) {
-                      final selected = _filter == f;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ChoiceChip(
-                          label: Text(f),
-                          selected: selected,
-                          onSelected: (_) => setState(() => _filter = f),
-                          selectedColor: AppColors.textPrimary,
-                          labelStyle: TextStyle(color: selected ? AppColors.white : AppColors.textPrimary),
-                          backgroundColor: AppColors.white,
-                        ),
-                      );
-                    }).toList(),
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(promotionsProvider.future),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                  child: SizedBox(
+                    height: 36,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: ['All', '₱ Off', '% Off', 'Site-wide'].map((f) {
+                        final selected = _filter == f;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(f),
+                            selected: selected,
+                            onSelected: (_) => setState(() => _filter = f),
+                            selectedColor: AppColors.textPrimary,
+                            labelStyle: TextStyle(color: selected ? AppColors.white : AppColors.textPrimary),
+                            backgroundColor: AppColors.white,
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
-              ),
-              Expanded(
-                child: filtered.isEmpty
-                    ? const Center(child: Text('No promotions match this filter', style: TextStyle(color: AppColors.textSecondary)))
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(20),
-                        itemCount: filtered.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 14),
-                        itemBuilder: (context, i) => _PromoTicket(promo: filtered[i]),
-                      ),
-              ),
-            ],
+                Expanded(
+                  child: filtered.isEmpty
+                      ? ListView(
+                          children: const [
+                            Center(child: Padding(
+                              padding: EdgeInsets.only(top: 40),
+                              child: Text('No promotions match this filter', style: TextStyle(color: AppColors.textSecondary)),
+                            )),
+                          ],
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: filtered.length,
+                          separatorBuilder: (_, __) => const SizedBox(height: 14),
+                          itemBuilder: (context, i) => _PromoTicket(promo: filtered[i]),
+                        ),
+                ),
+              ],
+            ),
           );
         },
       ),

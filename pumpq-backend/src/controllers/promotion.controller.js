@@ -5,11 +5,14 @@ const fail = (res, status, message) => res.status(status).json({ success: false,
 
 async function listPromotions(req, res) {
   try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
     const { data: promotions, error } = await supabase
       .from('promotion')
       .select('promo_id, station_id, promo_name, promo_type, discount_value, promo_tag, coupon_code, expires_at, gas_station(name)')
       .eq('is_active', true)
-      .gt('expires_at', new Date().toISOString());
+      .or(`expires_at.is.null,expires_at.gte.${startOfToday.toISOString()}`);
 
     if (error) {
       console.error(error);
@@ -59,8 +62,9 @@ async function applyCoupon(req, res) {
       .eq('coupon_code', coupon_code.toUpperCase())
       .maybeSingle();
 
-    if (promoError) return fail(res, 500, 'Server error');
-    if (!promo || !promo.is_active || new Date(promo.expires_at) < new Date()) {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    if (!promo || !promo.is_active || (promo.expires_at && new Date(promo.expires_at) < startOfToday)) {
       return fail(res, 404, 'Invalid or expired coupon code');
     }
     if (promo.station_id && promo.station_id !== order.station_id) {

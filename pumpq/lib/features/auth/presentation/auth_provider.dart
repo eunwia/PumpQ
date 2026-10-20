@@ -47,6 +47,7 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(isLoading: true);
     final user = await _repo.me();
     state = AuthState(user: user, isLoading: false);
+    _syncFcmToken();
   }
 
   Future<bool> login(String email, String password) async {

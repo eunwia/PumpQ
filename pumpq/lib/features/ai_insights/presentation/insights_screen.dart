@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pumpq/core/constants/app_colors.dart';
 import 'package:pumpq/features/ai_insights/presentation/insights_provider.dart';
+import 'package:pumpq/features/ai_insights/services/report_pdf_service.dart';
+import 'package:pumpq/features/auth/presentation/auth_provider.dart';
 import 'package:pumpq/features/pre_order/presentation/order_provider.dart';
 import 'package:pumpq/models/insights_model.dart';
 import 'package:pumpq/models/order_model.dart';
+import 'package:pumpq/models/user_model.dart';
 
 class InsightsScreen extends ConsumerWidget {
   const InsightsScreen({super.key});
@@ -35,23 +37,27 @@ class InsightsScreen extends ConsumerWidget {
     );
   }
 
-  void _exportReport(BuildContext context, List<OrderModel> orders) {
-    final completed = orders.where((o) => o.status == 'completed').toList()
-      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
-
-    final buffer = StringBuffer();
-    buffer.writeln('Order ID,Date,Fuel Type,Liters,Amount,Status,Payment');
-    for (final o in completed) {
-      buffer.writeln(
-        '${o.orderId},${o.createdAt.year}-${o.createdAt.month.toString().padLeft(2, '0')}-${o.createdAt.day.toString().padLeft(2, '0')},'
-        '${o.fuelType},${o.liters},${o.amount},${o.status},${o.paymentStatus}',
+  Future<void> _exportReport(
+    BuildContext context,
+    List<OrderModel> orders,
+    BudgetInsightModel? budget,
+    RefuelReminderModel? reminder,
+    UserModel? user,
+  ) async {
+    try {
+      await ReportPdfService.exportPdf(
+        orders: orders,
+        budget: budget,
+        reminder: reminder,
+        user: user,
       );
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not export PDF report')),
+        );
+      }
     }
-
-    Clipboard.setData(ClipboardData(text: buffer.toString()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report copied to clipboard — paste into Excel/Sheets as CSV')),
-    );
   }
 
   @override
@@ -59,6 +65,7 @@ class InsightsScreen extends ConsumerWidget {
     final budgetAsync = ref.watch(budgetProvider);
     final reminderAsync = ref.watch(reminderProvider);
     final ordersAsync = ref.watch(myOrdersProvider);
+    final user = ref.watch(authProvider).user;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -75,7 +82,7 @@ class InsightsScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Expense Analytics', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('View Expense Analysis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 12),
           ordersAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -83,7 +90,7 @@ class InsightsScreen extends ConsumerWidget {
             data: (orders) => _ExpenseAnalyticsCard(orders: orders),
           ),
           const SizedBox(height: 24),
-          const Text('AI Analytics', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('View AI Analytics', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 12),
           reminderAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -91,7 +98,7 @@ class InsightsScreen extends ConsumerWidget {
             data: (reminder) => _ReminderCard(reminder: reminder),
           ),
           const SizedBox(height: 24),
-          const Text('Reports', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('Export Report', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 12),
           ordersAsync.when(
             loading: () => const SizedBox.shrink(),
@@ -99,16 +106,55 @@ class InsightsScreen extends ConsumerWidget {
             data: (orders) => Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.description_outlined, color: AppColors.primary),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text('Export your completed order history as a CSV report', style: TextStyle(fontSize: 13)),
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.picture_as_pdf_outlined, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Export Report (PDF)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                            SizedBox(height: 2),
+                            Text('Download or share your fuel history as a PDF', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  ElevatedButton(
-                    onPressed: () => _exportReport(context, orders),
-                    child: const Text('Export'),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      onPressed: () => _exportReport(
+                        context,
+                        orders,
+                        budgetAsync.asData?.value,
+                        reminderAsync.asData?.value,
+                        user,
+                      ),
+                      icon: const Icon(Icons.download, size: 18),
+                      label: const Text('Export PDF', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ),
                   ),
                 ],
               ),
@@ -152,13 +198,21 @@ class _BudgetDonutCard extends StatelessWidget {
           const SizedBox(width: 20),
           Expanded(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text('Monthly Budget', style: TextStyle(fontWeight: FontWeight.w600)),
-                    IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: onEdit, padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                    InkWell(
+                      onTap: onEdit,
+                      borderRadius: BorderRadius.circular(16),
+                      child: const Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(Icons.edit, size: 18, color: AppColors.primary),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -211,6 +265,7 @@ class _ExpenseAnalyticsCard extends StatelessWidget {
       byFuelType[o.fuelType] = (byFuelType[o.fuelType] ?? 0) + o.amount;
     }
     final totalSpent = byFuelType.values.fold(0.0, (a, b) => a + b);
+    final totalLiters = completed.fold<double>(0.0, (sum, o) => sum + o.liters);
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -220,12 +275,53 @@ class _ExpenseAnalyticsCard extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total Spent', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            const SizedBox(height: 2),
+                            Text('₱${totalSpent.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Total Liters', style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            const SizedBox(height: 2),
+                            Text('${totalLiters.toStringAsFixed(1)} L', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
                 Text('What you spent on your last ${recent.length} refuel${recent.length == 1 ? '' : 's'}',
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 130,
-                  child: CustomPaint(size: Size.infinite, painter: _BarChartPainter(values: recent.map((o) => o.amount).toList())),
+                  width: double.infinity,
+                  child: CustomPaint(painter: _BarChartPainter(values: recent.map((o) => o.amount).toList())),
                 ),
                 const SizedBox(height: 6),
                 Row(

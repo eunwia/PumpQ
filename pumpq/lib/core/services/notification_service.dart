@@ -1,5 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:pumpq/core/services/top_notification_banner.dart';
+import 'package:pumpq/features/notifications/presentation/notifications_provider.dart';
 
 class NotificationService {
   final _messaging = FirebaseMessaging.instance;
@@ -18,17 +20,26 @@ class NotificationService {
 
     final token = await _messaging.getToken();
     debugPrint('FCM token: $token');
-    // TODO: send this token to the backend so it can target this device later.
+    // Token is synced to the backend via auth_provider._syncFcmToken() on login.
 
+    // Show an in-app banner when a notification arrives while the app is open.
     FirebaseMessaging.onMessage.listen((message) {
-      debugPrint('Foreground message: ${message.notification?.title}');
-      // TODO: show an in-app banner or local notification here once
-      // flutter_local_notifications is re-enabled.
+      final title = message.notification?.title ?? '';
+      final body = message.notification?.body ?? '';
+      debugPrint('Foreground message: $title');
+      if (title.isNotEmpty || body.isNotEmpty) {
+        NotificationStorage.save(title: title, body: body);
+        TopNotificationBanner.show(title: title, body: body);
+      }
     });
 
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
-      debugPrint('Notification tapped: ${message.notification?.title}');
-      // TODO: navigate to a relevant screen based on message.data.
+      final title = message.notification?.title ?? '';
+      final body = message.notification?.body ?? '';
+      debugPrint('Notification tapped: $title');
+      if (title.isNotEmpty || body.isNotEmpty) {
+        NotificationStorage.save(title: title, body: body);
+      }
     });
   }
 

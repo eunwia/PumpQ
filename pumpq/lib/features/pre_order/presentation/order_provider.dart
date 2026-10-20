@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pumpq/features/auth/presentation/auth_provider.dart';
 import 'package:pumpq/features/pre_order/data/order_repository.dart';
 import 'package:pumpq/models/order_model.dart';
-import 'package:dio/dio.dart';
 import 'package:pumpq/features/wallet/presentation/wallet_provider.dart';
 
 final orderRepositoryProvider = Provider<OrderRepository>((ref) {
@@ -35,6 +34,7 @@ class CreateOrderNotifier extends Notifier<CreateOrderState> {
             liters: liters,
           );
       state = CreateOrderState(order: order);
+      ref.invalidate(myOrdersProvider);
       return true;
     } catch (e) {
       state = CreateOrderState(error: _readableError(e));
@@ -63,6 +63,13 @@ final createOrderProvider =
 
 final myOrdersProvider = FutureProvider<List<OrderModel>>((ref) {
   return ref.watch(orderRepositoryProvider).getOrders();
+});
+
+final singleOrderProvider = FutureProvider.family<OrderModel, int>((ref, orderId) async {
+  final orders = ref.watch(myOrdersProvider).asData?.value;
+  final found = orders?.where((o) => o.orderId == orderId).firstOrNull;
+  if (found != null) return found;
+  return ref.watch(orderRepositoryProvider).getOrder(orderId);
 });
 
 class GenerateQrNotifier extends Notifier<AsyncValue<OrderModel?>> {

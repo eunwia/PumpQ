@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:pumpq/app/main_shell.dart';
@@ -17,8 +18,11 @@ import 'package:pumpq/features/station_map/presentation/station_map_screen.dart'
 import 'package:pumpq/features/wallet/presentation/wallet_screen.dart';
 import 'package:pumpq/features/promotions/presentation/promotions_screen.dart';
 
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: rootNavigatorKey,
     initialLocation: '/login',
     routes: [
       GoRoute(

@@ -7,7 +7,6 @@ import 'package:pumpq/core/constants/app_colors.dart';
 import 'package:pumpq/features/pre_order/presentation/order_provider.dart';
 import 'package:pumpq/features/promotions/presentation/promotion_provider.dart';
 import 'package:pumpq/features/station_map/presentation/station_provider.dart';
-import 'package:pumpq/models/order_model.dart';
 import 'package:pumpq/models/station_model.dart';
 
 class OrderDetailScreen extends ConsumerWidget {
@@ -45,6 +44,7 @@ class OrderDetailScreen extends ConsumerWidget {
     try {
       await ref.read(orderRepositoryProvider).cancelOrder(orderId);
       ref.invalidate(myOrdersProvider);
+      ref.invalidate(singleOrderProvider(orderId));
       if (context.mounted) context.pop();
     } catch (_) {
       if (context.mounted) {
@@ -57,6 +57,7 @@ class OrderDetailScreen extends ConsumerWidget {
 
   Future<void> _pay(BuildContext context, WidgetRef ref, int orderId, String method) async {
     await ref.read(payOrderProvider.notifier).pay(orderId, method);
+    ref.invalidate(singleOrderProvider(orderId));
     if (!context.mounted) return;
     final state = ref.read(payOrderProvider);
     if (state.success) {
@@ -81,6 +82,7 @@ class OrderDetailScreen extends ConsumerWidget {
           ElevatedButton(
             onPressed: () async {
               await ref.read(applyCouponProvider.notifier).apply(orderId, controller.text.trim());
+              ref.invalidate(singleOrderProvider(orderId));
               if (context.mounted) {
                 final state = ref.read(applyCouponProvider);
                 Navigator.pop(context);
@@ -99,20 +101,16 @@ class OrderDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ordersAsync = ref.watch(myOrdersProvider);
+    final orderAsync = ref.watch(singleOrderProvider(orderId));
     final stationsAsync = ref.watch(nearbyStationsProvider);
     final payState = ref.watch(payOrderProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Order Details')),
-      body: ordersAsync.when(
+      body: orderAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Could not load order')),
-        data: (orders) {
-          final order = orders.where((o) => o.orderId == orderId).firstOrNull;
-          if (order == null) {
-            return const Center(child: Text('Order not found'));
-          }
+        data: (order) {
 
           return stationsAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),

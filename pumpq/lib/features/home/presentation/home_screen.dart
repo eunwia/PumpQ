@@ -8,6 +8,7 @@ import 'package:pumpq/features/loyalty_rewards/presentation/loyalty_provider.dar
 import 'package:pumpq/features/price_comparison/presentation/price_provider.dart';
 import 'package:pumpq/features/station_map/presentation/station_provider.dart';
 import 'package:pumpq/features/wallet/presentation/wallet_provider.dart';
+import 'package:pumpq/features/notifications/presentation/notifications_provider.dart';
 import 'package:pumpq/models/fuel_posting_model.dart';
 import 'package:pumpq/models/station_model.dart';
 
@@ -63,15 +64,231 @@ class HomeScreen extends ConsumerWidget {
 class _HeaderRow extends ConsumerWidget {
   const _HeaderRow();
 
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inSeconds < 60) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
+  void _showNotificationsSheet(BuildContext context, WidgetRef ref) {
+    ref.read(notificationsProvider.notifier).load();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Consumer(
+        builder: (context, ref, _) {
+          final notifications = ref.watch(notificationsProvider);
+          return Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.75,
+            ),
+            decoration: const BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Notifications',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        if (notifications.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              '${notifications.length}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        if (notifications.isNotEmpty)
+                          TextButton(
+                            onPressed: () => ref.read(notificationsProvider.notifier).clearAll(),
+                            child: const Text('Clear all', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 20),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (notifications.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.notifications_none, size: 36, color: AppColors.textSecondary),
+                        SizedBox(height: 10),
+                        Text(
+                          'No notifications yet',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Price alerts, station updates, and refuel reminders will appear here.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Flexible(
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: notifications.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final item = notifications[index];
+                        final isPrice = item.title.contains('Price') || item.title.contains('⛽');
+                        return Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.background,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: isPrice ? Colors.orange.shade50 : AppColors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  isPrice ? Icons.local_gas_station : Icons.notifications_active_outlined,
+                                  color: isPrice ? Colors.orange.shade800 : AppColors.primary,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            item.title,
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                        ),
+                                        Text(
+                                          _timeAgo(item.receivedAt),
+                                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      item.body,
+                                      style: const TextStyle(fontSize: 12, color: Colors.black87),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              InkWell(
+                                onTap: () => ref.read(notificationsProvider.notifier).removeNotification(item.id),
+                                borderRadius: BorderRadius.circular(12),
+                                child: const Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: Icon(Icons.close, size: 16, color: AppColors.textSecondary),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final notifications = ref.watch(notificationsProvider);
+
     return Row(
       children: [
         Image.asset('assets/images/pumpq_icon.png', height: 32),
         const SizedBox(width: 8),
         const Text('Hello!', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
         const Spacer(),
-        IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () => _showNotificationsSheet(context, ref),
+            ),
+            if (notifications.isNotEmpty)
+              Positioned(
+                right: 8,
+                top: 8,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }
@@ -178,7 +395,28 @@ class _NearbyStationsHeader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         const Text('Nearby Stations', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        TextButton(onPressed: () => context.goNamed(AppRoute.stationMap), child: const Text('View Map →')),
+        InkWell(
+          onTap: () => context.goNamed(AppRoute.stationMap),
+          borderRadius: BorderRadius.circular(8),
+          child: const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'View Map',
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Icon(Icons.arrow_forward_rounded, size: 16, color: AppColors.primary),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
