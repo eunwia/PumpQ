@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
+import { useDialog } from '../context/DialogContext';
 
 const ORANGE = '#E8450A';
 
@@ -63,6 +64,7 @@ function SortTh({ label, field, sort, onSort }) {
 }
 
 export default function Transactions() {
+  const { confirm: confirmDialog, alert: alertDialog } = useDialog();
   const [orders, setOrders] = useState([]);
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
@@ -84,12 +86,12 @@ export default function Transactions() {
 
   async function accept(id) {
     try { await api.put(`/staff/orders/${id}/accept`); load(); }
-    catch (e) { alert(e.response?.data?.message || 'Failed'); }
+    catch (e) { alertDialog(e.response?.data?.message || 'Failed'); }
   }
   async function cancel(id) {
-    if (!confirm('Cancel this order?')) return;
+    if (!await confirmDialog({ message: 'Cancel this order?', isDestructive: true })) return;
     try { await api.put(`/staff/orders/${id}/cancel`); load(); }
-    catch (e) { alert(e.response?.data?.message || 'Failed'); }
+    catch (e) { alertDialog(e.response?.data?.message || 'Failed'); }
   }
 
   const counts = useMemo(() => {

@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const supabase = require('../config/supabase');
 const admin = require('../config/firebaseAdmin');
@@ -7,7 +8,9 @@ const ok = (res, status, data, message) =>
 const fail = (res, status, message) =>
   res.status(status).json({ success: false, data: null, message });
 
-const QR_EXPIRY = '15m'; // how long a generated QR stays valid
+function generateShortCode() {
+  return 'PQ-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+}
 
 async function generateQr(req, res) {
   try {
@@ -30,15 +33,12 @@ async function generateQr(req, res) {
       return fail(res, 409, `Cannot generate a QR for an order that is ${order.status}`);
     }
 
-    const qrToken = jwt.sign(
-      { order_id: order.order_id, type: 'order_qr' },
-      process.env.JWT_SECRET,
-      { expiresIn: QR_EXPIRY },
-    );
+    const shortCode = generateShortCode();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
 
     const { data: updated, error: updateError } = await supabase
       .from('order')
-      .update({ qr_code: qrToken })
+      .update({ qr_code: shortCode, scheduled_at: expiresAt })
       .eq('order_id', order_id)
       .select('order_id, user_id, station_id, qr_code, fuel_type, liters, amount, status, scheduled_at, created_at')
       .single();
@@ -60,28 +60,56 @@ async function validateQr(req, res) {
     const { qr_code } = req.body || {};
     if (!qr_code) return fail(res, 400, 'qr_code is required');
 
-    let payload;
-    try {
-      payload = jwt.verify(qr_code, process.env.JWT_SECRET);
-    } catch {
-      return fail(res, 401, 'QR code is invalid or has expired');
-    }
-    if (payload.type !== 'order_qr') {
-      return fail(res, 400, 'Not a valid order QR code');
+    const rawCode = String(qr_code).trim();
+    let order;
+
+    // 1. Support legacy long JWT codes (contains dots)
+    if (rawCode.includes('.')) {
+      let payload;
+      try {
+        payload = jwt.verify(rawCode, process.env.JWT_SECRET);
+      } catch {
+        return fail(res, 401, 'QR code is invalid or has expired');
+      }
+      if (payload.type !== 'order_qr') {
+        return fail(res, 400, 'Not a valid order QR code');
+      }
+
+      const { data: o, error } = await supabase
+        .from('order')
+        .select('order_id, user_id, status, qr_code, fuel_type, liters, amount, scheduled_at')
+        .eq('order_id', payload.order_id)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return fail(res, 500, 'Server error');
+      }
+      order = o;
+    } else {
+      // 2. Short code lookup
+      const { data: o, error } = await supabase
+        .from('order')
+        .select('order_id, user_id, status, qr_code, fuel_type, liters, amount, scheduled_at')
+        .ilike('qr_code', rawCode)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return fail(res, 500, 'Server error');
+      }
+      order = o;
+
+      if (order && order.scheduled_at) {
+        const expiry = new Date(order.scheduled_at).getTime();
+        if (Date.now() > expiry) {
+          return fail(res, 401, 'QR code is invalid or has expired');
+        }
+      }
     }
 
-    const { data: order, error } = await supabase
-      .from('order')
-      .select('order_id, user_id, status, qr_code, fuel_type, liters, amount')
-      .eq('order_id', payload.order_id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(error);
-      return fail(res, 500, 'Server error');
-    }
     if (!order) return fail(res, 404, 'Order not found');
-    if (order.qr_code !== qr_code) {
+    if (order.qr_code && order.qr_code.toLowerCase() !== rawCode.toLowerCase()) {
       return fail(res, 409, 'This QR code has been superseded by a newer one');
     }
     if (order.status !== 'pending') {

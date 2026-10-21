@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import api from '../api/client';
+import { useDialog } from '../context/DialogContext';
 
 export default function Promotions() {
+  const { confirm: confirmDialog } = useDialog();
   const [promos, setPromos] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ promo_name: '', promo_type: 'flat', discount_value: '', promo_tag: '', coupon_code: '', expires_at: '' });
@@ -30,7 +32,7 @@ export default function Promotions() {
     e.preventDefault();
     if (!form.promo_name || !form.coupon_code) return;
     if (editingId) {
-      if (!confirm(`Update promotion "${form.promo_name}"?`)) return;
+      if (!await confirmDialog(`Update promotion "${form.promo_name}"?`)) return;
       await api.put(`/staff/promotions/${editingId}`, {
         ...form,
         discount_value: Number(form.discount_value),
@@ -38,7 +40,7 @@ export default function Promotions() {
       });
       handleCancelEdit();
     } else {
-      if (!confirm(`Create promotion "${form.promo_name}" with code "${form.coupon_code}"?`)) return;
+      if (!await confirmDialog(`Create promotion "${form.promo_name}" with code "${form.coupon_code}"?`)) return;
       await api.post('/staff/promotions', {
         ...form,
         discount_value: Number(form.discount_value),
@@ -51,13 +53,13 @@ export default function Promotions() {
 
   async function toggleActive(p) {
     const nextLabel = p.is_active ? 'inactive' : 'active';
-    if (!confirm(`Do you wish to make "${p.promo_name}" ${nextLabel}?`)) return;
+    if (!await confirmDialog(`Do you wish to make "${p.promo_name}" ${nextLabel}?`)) return;
     await api.put(`/staff/promotions/${p.promo_id}`, { is_active: !p.is_active });
     load();
   }
 
   async function handleDelete(p) {
-    if (!confirm(`Delete promotion "${p.promo_name}" (${p.coupon_code})? This cannot be undone.`)) return;
+    if (!await confirmDialog({ message: `Delete promotion "${p.promo_name}" (${p.coupon_code})? This cannot be undone.`, isDestructive: true })) return;
     await api.delete(`/staff/promotions/${p.promo_id}`);
     if (editingId === p.promo_id) handleCancelEdit();
     load();

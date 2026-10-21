@@ -13,16 +13,74 @@ function signToken(staffId) {
 
 async function register(req, res) {
   try {
-    const { first_name, last_name, email, password, station_id, role, contact_number } = req.body || {};
-    if (!first_name || !last_name || !email || !password || !station_id) {
-      return fail(res, 400, 'first_name, last_name, email, password, station_id are required');
+    const {
+      first_name,
+      last_name,
+      email,
+      password,
+      station_id: reqStationId,
+      station_name,
+      fuel_brand,
+      location,
+      latitude,
+      longitude,
+      role,
+      contact_number
+    } = req.body || {};
+
+    if (!first_name || !last_name || !email || !password) {
+      return fail(res, 400, 'first_name, last_name, email, password are required');
     }
+
+    let assignedStationId = reqStationId ? Number(reqStationId) : null;
+
+    // If no station_id was provided, auto-create a gas station from the picked location
+    if (!assignedStationId) {
+      const name = (station_name || location || `${first_name}'s Station`).split(',')[0].trim();
+      const detectedBrand = fuel_brand || (
+        /shell/i.test(name) ? 'Shell' :
+        /caltex/i.test(name) ? 'Caltex' :
+        /petron/i.test(name) ? 'Petron' :
+        /seaoil/i.test(name) ? 'Seaoil' :
+        /phoenix/i.test(name) ? 'Phoenix' : null
+      );
+
+      const { data: newStation, error: stationErr } = await supabase
+        .from('gas_station')
+        .insert({
+          name: name || 'Gas Station',
+          fuel_brand: detectedBrand,
+          location: location || name || 'Station Location',
+          latitude: latitude != null ? Number(latitude) : 0,
+          longitude: longitude != null ? Number(longitude) : 0,
+          is_open: true,
+        })
+        .select('station_id')
+        .single();
+
+      if (stationErr || !newStation) {
+        console.error('Failed to create gas station:', stationErr);
+        return fail(res, 500, 'Could not create station for registration');
+      }
+
+      assignedStationId = newStation.station_id;
+    }
+
     const password_hash = await bcrypt.hash(password, 10);
     const { data: staff, error } = await supabase
       .from('staff')
-      .insert({ first_name, last_name, email: email.toLowerCase().trim(), password_hash, station_id, role: role || 'attendant', contact_number })
+      .insert({
+        first_name,
+        last_name,
+        email: email.toLowerCase().trim(),
+        password_hash,
+        station_id: assignedStationId,
+        role: role || 'attendant',
+        contact_number
+      })
       .select(STAFF_FIELDS)
       .single();
+
     if (error) {
       if (error.code === '23505') return fail(res, 409, 'Email already registered');
       return fail(res, 500, 'Could not create staff account');

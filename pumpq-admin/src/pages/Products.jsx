@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/client';
+import { useDialog } from '../context/DialogContext';
 
 const ORANGE = '#E8450A';
 
@@ -57,6 +58,7 @@ function SortTh({ label, field, sort, onSort }) {
 }
 
 export default function Products() {
+  const { confirm: confirmDialog, prompt: promptDialog } = useDialog();
   const [postings, setPostings] = useState([]);
   const [form, setForm] = useState({ fuel_type: '', price: '' });
   const [showForm, setShowForm] = useState(false);
@@ -79,7 +81,7 @@ export default function Products() {
   async function handleAdd(e) {
     e.preventDefault();
     if (!form.fuel_type || !form.price) return;
-    if (!confirm(`Add "${form.fuel_type}" at ₱${form.price} per liter?`)) return;
+    if (!await confirmDialog(`Add "${form.fuel_type}" at ₱${form.price} per liter?`)) return;
     await api.post('/staff/fuel', { fuel_type: form.fuel_type, price: Number(form.price), availability: true });
     setForm({ fuel_type: '', price: '' });
     setShowForm(false);
@@ -88,21 +90,21 @@ export default function Products() {
 
   async function toggleAvailability(p) {
     const nextLabel = p.availability ? 'unavailable' : 'available';
-    if (!confirm(`Do you wish to make "${p.fuel_type}" ${nextLabel}?`)) return;
+    if (!await confirmDialog(`Do you wish to make "${p.fuel_type}" ${nextLabel}?`)) return;
     await api.put(`/staff/fuel/${p.price_id}`, { availability: !p.availability });
     load();
   }
 
   async function updatePrice(p) {
-    const np = prompt('New price:', p.price);
+    const np = await promptDialog({ title: 'Edit Price', message: 'New price:', defaultValue: p.price, inputType: 'number' });
     if (np == null || np === '') return;
-    if (!confirm(`Update "${p.fuel_type}" price from ₱${p.price} to ₱${np}?`)) return;
+    if (!await confirmDialog(`Update "${p.fuel_type}" price from ₱${p.price} to ₱${np}?`)) return;
     await api.put(`/staff/fuel/${p.price_id}`, { price: Number(np) });
     load();
   }
 
   async function handleDelete(p) {
-    if (!confirm(`Delete "${p.fuel_type}" from your station's offerings? This cannot be undone.`)) return;
+    if (!await confirmDialog({ message: `Delete "${p.fuel_type}" from your station's offerings? This cannot be undone.`, isDestructive: true })) return;
     await api.delete(`/staff/fuel/${p.price_id}`);
     load();
   }

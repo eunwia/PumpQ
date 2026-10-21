@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/client';
 import mascot from '../../images/piq-register.png';
@@ -16,12 +16,18 @@ function Field({ label, children }) {
 }
 
 export default function Register() {
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', station_id: '', contact_number: '' });
+  const [form, setForm] = useState({ first_name: '', last_name: '', email: '', password: '', contact_number: '' });
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationResults, setLocationResults] = useState([]);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [searchingLocation, setSearchingLocation] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [ripple, setRipple] = useState(null);
+  const searchTimeoutRef = useRef(null);
   const navigate = useNavigate();
 
   function set(k) { return (e) => setForm({ ...form, [k]: e.target.value }); }
@@ -31,12 +37,61 @@ export default function Register() {
     setRipple({ x: e.clientX - r.left, y: e.clientY - r.top, key: Date.now() });
   }
 
+  function handleLocationSearch(val) {
+    setLocationQuery(val);
+    setSelectedLocation(null);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!val || val.trim().length < 3) {
+      setLocationResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    setSearchingLocation(true);
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&limit=5&addressdetails=1`,
+          { headers: { Accept: 'application/json' } }
+        );
+        const data = await res.json();
+        setLocationResults(data || []);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error('Location search failed:', err);
+      } finally {
+        setSearchingLocation(false);
+      }
+    }, 400);
+  }
+
+  function handleSelectLocation(item) {
+    const locObj = {
+      location: item.display_name,
+      latitude: parseFloat(item.lat),
+      longitude: parseFloat(item.lon),
+      name: item.name || item.display_name.split(',')[0],
+    };
+    setSelectedLocation(locObj);
+    setLocationQuery(item.display_name);
+    setShowDropdown(false);
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!locationQuery.trim()) {
+      setError('Please search and select your gas station location');
+      return;
+    }
     setLoading(true);
     try {
-      await api.post('/staff/auth/register', { ...form, station_id: Number(form.station_id) });
+      await api.post('/staff/auth/register', {
+        ...form,
+        location: selectedLocation ? selectedLocation.location : locationQuery,
+        latitude: selectedLocation ? selectedLocation.latitude : 0,
+        longitude: selectedLocation ? selectedLocation.longitude : 0,
+        station_name: selectedLocation ? selectedLocation.name : locationQuery.split(',')[0],
+      });
       setLeaving(true);
       setTimeout(() => navigate('/login'), 450);
     } catch (err) {
@@ -151,14 +206,60 @@ export default function Register() {
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Field label="Station ID">
-              <input type="number" value={form.station_id} onChange={set('station_id')} style={inputStyle} />
-            </Field>
-            <Field label="Contact number">
-              <input value={form.contact_number} onChange={set('contact_number')} style={inputStyle} />
-            </Field>
+          <div style={{ position: 'relative' }}>
+            <label style={labelStyle}>Station Location</label>
+            <div style={{ position: 'relative', marginTop: 6, marginBottom: 16 }}>
+              <input
+                value={locationQuery}
+                onChange={(e) => handleLocationSearch(e.target.value)}
+                onFocus={() => { if (locationResults.length > 0) setShowDropdown(true); }}
+                placeholder="Search station location..."
+                style={{ width: '100%', margin: 0, paddingRight: searchingLocation ? 36 : 14 }}
+              />
+              {searchingLocation && (
+                <span style={{
+                  position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                  width: 14, height: 14, border: '2px solid #E8450A', borderTopColor: 'transparent',
+                  borderRadius: '50%', animation: 'pq-spin .7s linear infinite',
+                }} />
+              )}
+              {selectedLocation && (
+                <div style={{ fontSize: 11, color: '#1E8E4E', fontWeight: 600, marginTop: 4 }}>
+                  ✓ Location pinned ({selectedLocation.latitude.toFixed(4)}, {selectedLocation.longitude.toFixed(4)})
+                </div>
+              )}
+
+              {showDropdown && locationResults.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0, zIndex: 100,
+                  background: '#fff', borderRadius: 12, border: '1px solid #ECECEC',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', maxHeight: 180, overflowY: 'auto',
+                }}>
+                  {locationResults.map((item, idx) => (
+                    <div
+                      key={idx}
+                      onMouseDown={() => handleSelectLocation(item)}
+                      style={{
+                        padding: '10px 14px', fontSize: 12.5, color: '#333', cursor: 'pointer',
+                        borderBottom: idx === locationResults.length - 1 ? 'none' : '1px solid #F4F4F4',
+                        transition: 'background .12s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = '#FFF6F2'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                    >
+                      <div style={{ fontWeight: 600, color: '#1A1A1A' }}>{item.name || item.display_name.split(',')[0]}</div>
+                      <div style={{ fontSize: 11, color: '#777', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {item.display_name}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+
+          <label style={labelStyle}>Contact number</label>
+          <input value={form.contact_number} onChange={set('contact_number')} style={inputStyle} />
 
           {error && <p style={{ color: '#D8232A', fontSize: 13, marginBottom: 8 }}>{error}</p>}
           <button

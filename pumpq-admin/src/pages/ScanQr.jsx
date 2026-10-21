@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import axios from 'axios';
+import { useDialog } from '../context/DialogContext';
 
 const ORANGE = '#E8450A';
 
@@ -14,6 +15,7 @@ const S = {
 };
 
 export default function ScanQr() {
+  const { alert: alertDialog } = useDialog();
   const scannerRef = useRef(null);
   const isScanningRef = useRef(false);
   const [result, setResult] = useState(null);
@@ -64,7 +66,7 @@ export default function ScanQr() {
       isScanningRef.current = true;
     } catch {
       setScanning(false);
-      alert('Camera access failed. Check browser permissions.');
+      alertDialog({ title: 'Camera Error', message: 'Camera access failed. Check browser permissions.' });
     }
   }
 
@@ -153,7 +155,7 @@ export default function ScanQr() {
         <div style={S.card}>
           <h3>Manual Entry</h3>
           <form onSubmit={handleManualSubmit} style={{ display: 'flex', gap: 8 }}>
-            <input placeholder="Paste QR code" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
+            <input placeholder="Enter or paste code (e.g. PQ-...)" value={manualCode} onChange={(e) => setManualCode(e.target.value)} style={{ flex: 1, minWidth: 0 }} />
             <button type="submit" style={{ background: '#1A1A1A' }}>Confirm</button>
           </form>
         </div>
