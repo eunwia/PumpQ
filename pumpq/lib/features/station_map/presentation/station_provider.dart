@@ -10,3 +10,19 @@ final stationRepositoryProvider = Provider<StationRepository>((ref) {
 final nearbyStationsProvider = FutureProvider<List<StationModel>>((ref) {
   return ref.watch(stationRepositoryProvider).getNearbyStations();
 });
+
+class SelectedStationNotifier extends Notifier<StationModel?> {
+  @override
+  StationModel? build() => null;
+
+  void select(StationModel? station) {
+    state = station;
+  }
+
+  void clear() {
+    state = null;
+  }
+}
+
+final selectedStationProvider =
+    NotifierProvider<SelectedStationNotifier, StationModel?>(SelectedStationNotifier.new);

@@ -85,12 +85,14 @@ export default function Register() {
     }
     setLoading(true);
     try {
+      const locStr = (selectedLocation ? selectedLocation.location : locationQuery).trim();
+      const stationNameStr = (selectedLocation ? selectedLocation.name : locationQuery.split(',')[0]).trim();
       await api.post('/staff/auth/register', {
         ...form,
-        location: selectedLocation ? selectedLocation.location : locationQuery,
+        location: locStr.slice(0, 100),
         latitude: selectedLocation ? selectedLocation.latitude : 0,
         longitude: selectedLocation ? selectedLocation.longitude : 0,
-        station_name: selectedLocation ? selectedLocation.name : locationQuery.split(',')[0],
+        station_name: stationNameStr.slice(0, 100),
       });
       setLeaving(true);
       setTimeout(() => navigate('/login'), 450);

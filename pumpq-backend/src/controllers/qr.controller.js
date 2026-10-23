@@ -12,6 +12,15 @@ function generateShortCode() {
   return 'PQ-' + crypto.randomBytes(3).toString('hex').toUpperCase();
 }
 
+function parseExpiry(ts) {
+  if (!ts) return null;
+  const s = String(ts).trim();
+  // Ensure ISO timestamp without timezone is interpreted as UTC, not local time
+  const utcStr = (s.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(s)) ? s : s + 'Z';
+  const parsed = new Date(utcStr);
+  return isNaN(parsed.getTime()) ? new Date(s) : parsed;
+}
+
 async function generateQr(req, res) {
   try {
     const { order_id } = req.body || {};
@@ -87,8 +96,8 @@ async function validateQr(req, res) {
       }
       order = o;
     } else {
-      // 2. Short code lookup
-      const { data: o, error } = await supabase
+      // 2. Short code lookup (e.g. PQ-533953 or 533953 or #41 / 41)
+      let { data: o, error } = await supabase
         .from('order')
         .select('order_id, user_id, status, qr_code, fuel_type, liters, amount, scheduled_at')
         .ilike('qr_code', rawCode)
@@ -98,20 +107,39 @@ async function validateQr(req, res) {
         console.error(error);
         return fail(res, 500, 'Server error');
       }
+
+      // If not found and input does not start with PQ-, try adding PQ- prefix
+      if (!o && !rawCode.toUpperCase().startsWith('PQ-')) {
+        const { data: prefixedOrder } = await supabase
+          .from('order')
+          .select('order_id, user_id, status, qr_code, fuel_type, liters, amount, scheduled_at')
+          .ilike('qr_code', `PQ-${rawCode}`)
+          .maybeSingle();
+        if (prefixedOrder) o = prefixedOrder;
+      }
+
+      // If still not found and input looks like an order_id (e.g. 41 or #41)
+      const numericId = rawCode.startsWith('#') ? rawCode.slice(1) : rawCode;
+      if (!o && /^\d+$/.test(numericId)) {
+        const { data: idOrder } = await supabase
+          .from('order')
+          .select('order_id, user_id, status, qr_code, fuel_type, liters, amount, scheduled_at')
+          .eq('order_id', Number(numericId))
+          .maybeSingle();
+        if (idOrder) o = idOrder;
+      }
+
       order = o;
 
       if (order && order.scheduled_at) {
-        const expiry = new Date(order.scheduled_at).getTime();
-        if (Date.now() > expiry) {
+        const expiry = parseExpiry(order.scheduled_at);
+        if (expiry && Date.now() > expiry.getTime()) {
           return fail(res, 401, 'QR code is invalid or has expired');
         }
       }
     }
 
     if (!order) return fail(res, 404, 'Order not found');
-    if (order.qr_code && order.qr_code.toLowerCase() !== rawCode.toLowerCase()) {
-      return fail(res, 409, 'This QR code has been superseded by a newer one');
-    }
     if (order.status !== 'pending') {
       return fail(res, 409, `Order is already ${order.status}`);
     }

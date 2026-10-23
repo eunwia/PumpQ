@@ -24,6 +24,8 @@ class _StationMapScreenState extends ConsumerState<StationMapScreen> {
   String _filter = 'All';
   String _search = '';
 
+  StationModel? _pendingStation;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +51,7 @@ class _StationMapScreenState extends ConsumerState<StationMapScreen> {
     return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
   }
 
-    Set<Marker> _buildMarkers(List<StationModel> stations, List<FuelPostingModel> prices) {
+  Set<Marker> _buildMarkers(List<StationModel> stations, List<FuelPostingModel> prices) {
     return stations.map((s) {
       return Marker(
         markerId: MarkerId(s.stationId.toString()),
@@ -72,10 +74,42 @@ class _StationMapScreenState extends ConsumerState<StationMapScreen> {
     );
   }
 
+  void _openStation(StationModel station, List<FuelPostingModel> allPrices) {
+    if (_mapController != null) {
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(station.latitude, station.longitude), 15),
+      );
+    } else {
+      _pendingStation = station;
+    }
+    _showStationSheet(station, allPrices);
+  }
+
   @override
   Widget build(BuildContext context) {
     final stationsAsync = ref.watch(nearbyStationsProvider);
     final pricesAsync = ref.watch(fuelPricesProvider);
+
+    final selectedOnEntry = ref.read(selectedStationProvider);
+    if (selectedOnEntry != null) {
+      final prices = pricesAsync.asData?.value ?? [];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(selectedStationProvider.notifier).clear();
+        _openStation(selectedOnEntry, prices);
+      });
+    }
+
+    ref.listen<StationModel?>(selectedStationProvider, (prev, selected) {
+      if (selected != null) {
+        final prices = ref.read(fuelPricesProvider).asData?.value ?? [];
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ref.read(selectedStationProvider.notifier).clear();
+          _openStation(selected, prices);
+        });
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -133,7 +167,13 @@ class _StationMapScreenState extends ConsumerState<StationMapScreen> {
                           initialCameraPosition: const CameraPosition(target: _cebuCity, zoom: 12),
                           onMapCreated: (c) {
                             _mapController = c;
-                            _centerOnUserLocation();
+                            if (_pendingStation != null) {
+                              final s = _pendingStation!;
+                              _pendingStation = null;
+                              c.animateCamera(CameraUpdate.newLatLngZoom(LatLng(s.latitude, s.longitude), 15));
+                            } else {
+                              _centerOnUserLocation();
+                            }
                           },
                           myLocationEnabled: true,
                           myLocationButtonEnabled: false,
@@ -224,8 +264,10 @@ class _StationListTile extends StatelessWidget {
             width: 44, height: 44,
             decoration: BoxDecoration(color: _brandColor(), borderRadius: BorderRadius.circular(10)),
             alignment: Alignment.center,
-            child: Text(station.fuelBrand.substring(0, 1),
-                style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+            child: Text(
+              station.fuelBrand.isNotEmpty ? station.fuelBrand.substring(0, 1) : 'P',
+              style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(

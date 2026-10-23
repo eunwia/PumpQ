@@ -15,7 +15,13 @@ async function listStations(req, res) {
       console.error(error);
       return fail(res, 500, 'Could not fetch stations');
     }
-    return ok(res, 200, { stations }, 'OK');
+    const safeStations = (stations || []).map((s) => ({
+      ...s,
+      name: s.name || 'Gas Station',
+      fuel_brand: s.fuel_brand || 'PumpQ',
+      location: s.location || '',
+    }));
+    return ok(res, 200, { stations: safeStations }, 'OK');
   } catch (err) {
     console.error(err);
     return fail(res, 500, 'Server error');
@@ -33,11 +39,11 @@ async function listFuelPrices(req, res) {
       return fail(res, 500, 'Could not fetch fuel prices');
     }
 
-    const prices = data.map((row) => ({
+    const prices = (data || []).map((row) => ({
       price_id: row.price_id,
       station_id: row.station_id,
-      station_name: row.gas_station?.name,
-      fuel_brand: row.gas_station?.fuel_brand,
+      station_name: row.gas_station?.name || 'Gas Station',
+      fuel_brand: row.gas_station?.fuel_brand || 'PumpQ',
       fuel_type: row.fuel_type,
       price: row.price,
       availability: row.availability,

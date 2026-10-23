@@ -19,13 +19,13 @@ class StationModel {
 
   factory StationModel.fromJson(Map<String, dynamic> json) {
     return StationModel(
-      stationId: json['station_id'] as int,
-      name: json['name'] as String,
-      fuelBrand: json['fuel_brand'] as String,
-      location: json['location'] as String,
-      latitude: (json['latitude'] as num).toDouble(),
-      longitude: (json['longitude'] as num).toDouble(),
-      isOpen: json['is_open'] as bool,
+      stationId: (json['station_id'] as num?)?.toInt() ?? 0,
+      name: (json['name'] as String?)?.trim().isNotEmpty == true ? json['name'] as String : 'Gas Station',
+      fuelBrand: (json['fuel_brand'] as String?)?.trim().isNotEmpty == true ? json['fuel_brand'] as String : 'PumpQ',
+      location: (json['location'] as String?) ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      isOpen: json['is_open'] as bool? ?? true,
     );
   }
 }

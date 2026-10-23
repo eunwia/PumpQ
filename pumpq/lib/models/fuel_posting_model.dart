@@ -19,13 +19,13 @@ class FuelPostingModel {
 
   factory FuelPostingModel.fromJson(Map<String, dynamic> json) {
     return FuelPostingModel(
-      priceId: json['price_id'] as int,
-      stationId: json['station_id'] as int,
-      stationName: json['station_name'] as String,
-      fuelBrand: json['fuel_brand'] as String,
-      fuelType: json['fuel_type'] as String,
-      price: (json['price'] as num).toDouble(),
-      availability: json['availability'] as bool,
+      priceId: (json['price_id'] as num?)?.toInt() ?? 0,
+      stationId: (json['station_id'] as num?)?.toInt() ?? 0,
+      stationName: (json['station_name'] as String?)?.trim().isNotEmpty == true ? json['station_name'] as String : 'Gas Station',
+      fuelBrand: (json['fuel_brand'] as String?)?.trim().isNotEmpty == true ? json['fuel_brand'] as String : 'PumpQ',
+      fuelType: (json['fuel_type'] as String?) ?? 'Fuel',
+      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      availability: json['availability'] as bool? ?? true,
     );
   }
 }

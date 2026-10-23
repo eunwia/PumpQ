@@ -111,8 +111,10 @@ class _PriceCard extends StatelessWidget {
                 width: 44, height: 44,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: _brandColor(), borderRadius: BorderRadius.circular(10)),
-                child: Text(posting.fuelBrand.substring(0, 1),
-                    style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                child: Text(
+                  posting.fuelBrand.isNotEmpty ? posting.fuelBrand.substring(0, 1) : 'P',
+                  style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

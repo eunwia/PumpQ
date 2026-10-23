@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import axios from 'axios';
+import api from '../api/client';
 import { useDialog } from '../context/DialogContext';
 
 const ORANGE = '#E8450A';
@@ -37,7 +37,7 @@ export default function ScanQr() {
 
   async function confirmOrder(qr_code) {
     try {
-      const res = await axios.post('http://localhost:3000/api/qr/validate', { qr_code });
+      const res = await api.post('/qr/validate', { qr_code });
       setResult({ ok: true, data: res.data.data.order });
       setStats((s) => ({ ...s, confirmed: s.confirmed + 1 }));
     } catch (e) {

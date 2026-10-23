@@ -36,21 +36,25 @@ async function register(req, res) {
 
     // If no station_id was provided, auto-create a gas station from the picked location
     if (!assignedStationId) {
-      const name = (station_name || location || `${first_name}'s Station`).split(',')[0].trim();
-      const detectedBrand = fuel_brand || (
+      const rawName = (station_name || location || `${first_name}'s Station`).split(',')[0].trim();
+      const name = (rawName || 'Gas Station').slice(0, 100);
+      const rawBrand = fuel_brand || (
         /shell/i.test(name) ? 'Shell' :
         /caltex/i.test(name) ? 'Caltex' :
         /petron/i.test(name) ? 'Petron' :
         /seaoil/i.test(name) ? 'Seaoil' :
         /phoenix/i.test(name) ? 'Phoenix' : null
       );
+      const detectedBrand = rawBrand ? String(rawBrand).trim().slice(0, 50) : 'PumpQ';
+      const rawLocation = location || name || 'Station Location';
+      const safeLocation = String(rawLocation).trim().slice(0, 100);
 
       const { data: newStation, error: stationErr } = await supabase
         .from('gas_station')
         .insert({
-          name: name || 'Gas Station',
+          name,
           fuel_brand: detectedBrand,
-          location: location || name || 'Station Location',
+          location: safeLocation,
           latitude: latitude != null ? Number(latitude) : 0,
           longitude: longitude != null ? Number(longitude) : 0,
           is_open: true,
